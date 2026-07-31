@@ -44,8 +44,9 @@ else:
     ui_loading = "Fetching latest breaking news..."
     ui_error = "Could not fetch data from this source right now, please choose another source."
 
-# تطبيق اتجاه الصفحة (RTL / LTR)
-st.markdown(f"""
+# تطبيق اتجاه الصفحة (RTL / LTR) بدون أخطاء برمجية
+st.markdown(
+    f"""
     <style>
     div[data-testid="stAppViewContainer"] {{
         direction: {direction};
@@ -55,14 +56,16 @@ st.markdown(f"""
         direction: {direction};
     }
     </style>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True
+)
 
 # 3. جدول المصادر الإخبارية الشاملة (رياضة، سياسة، تكنولوجيا، اقتصاد)
 NEWS_FEEDS = {
     "⚽ الرياضة / Sports": {
-        "بطولات - أخبار الرياضة": "https://www.btolat.com/rss/news",
         "Sky Sports Football": "https://www.skysports.com/rss/12040",
-        "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news"
+        "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news",
+        "BBC Sport - Football": "http://feeds.bbci.co.uk/sport/football/rss.xml"
     },
     "🏛️ السياسة / Politics": {
         "بي بي سي عربي - الرئيسية": "https://feeds.bbci.co.uk/arabic/rss.xml",
