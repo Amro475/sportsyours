@@ -100,68 +100,49 @@ with col_btn:
     if st.button("🔄 تحديث الأخبار الآن"):
         st.rerun()
 
-tab_news, tab_videos = st.tabs(["📰 الأخبار الرياضية", "🎥 التغطيات المرئية والأهداف"])
+st.divider()
 
-with tab_news:
-    col1, col2 = st.columns(2)
-    with col1:
-        selected_category = st.selectbox("📌 اختر القسم الرياضي:", list(SPORTS_FEEDS.keys()))
-    with col2:
-        sources = SPORTS_FEEDS[selected_category]
-        selected_source_name = st.selectbox("🌐 اختر المصدر الرياضي:", list(sources.keys()))
+# القوائم المنسدلة لاختيار القسم والصحيفة مباشرة
+col1, col2 = st.columns(2)
+with col1:
+    selected_category = st.selectbox("📌 اختر القسم الرياضي:", list(SPORTS_FEEDS.keys()))
+with col2:
+    sources = SPORTS_FEEDS[selected_category]
+    selected_source_name = st.selectbox("🌐 اختر المصدر الرياضي:", list(sources.keys()))
 
-    feed_url = sources[selected_source_name]
-    st.divider()
+feed_url = sources[selected_source_name]
+st.divider()
 
-    st.header(f"آخر أحداث: {selected_source_name}")
+st.header(f"آخر أحداث: {selected_source_name}")
+
+feed = fetch_feed_data(feed_url)
+
+if feed and feed.entries:
+    filtered_entries = [
+        entry for entry in feed.entries 
+        if is_sports_news(entry.title, getattr(entry, 'summary', ''))
+    ]
     
-    feed = fetch_feed_data(feed_url)
-
-    if feed and feed.entries:
-        filtered_entries = [
-            entry for entry in feed.entries 
-            if is_sports_news(entry.title, getattr(entry, 'summary', ''))
-        ]
-        
-        if filtered_entries:
-            for entry in filtered_entries[:12]:
-                st.subheader(entry.title)
+    if filtered_entries:
+        for entry in filtered_entries[:12]:
+            st.subheader(entry.title)
+            
+            if hasattr(entry, 'published') and entry.published:
+                st.caption(f"🕒 وقت النشر: {entry.published}")
+            
+            img_url = extract_image_url(entry)
+            if img_url:
+                st.image(img_url, use_column_width=True)
                 
-                if hasattr(entry, 'published') and entry.published:
-                    st.caption(f"🕒 وقت النشر: {entry.published}")
+            summary_html = getattr(entry, 'summary', '')
+            clean_text = BeautifulSoup(summary_html, "html.parser").get_text().strip()
+            
+            if clean_text:
+                st.write(clean_text)
                 
-                img_url = extract_image_url(entry)
-                if img_url:
-                    st.image(img_url, use_column_width=True)
-                    
-                summary_html = getattr(entry, 'summary', '')
-                clean_text = BeautifulSoup(summary_html, "html.parser").get_text().strip()
-                
-                if clean_text:
-                    st.write(clean_text)
-                    
-                st.link_button("🔗 قراءة الخبر كاملاً من المصدر الرسمي", entry.link)
-                st.divider()
-        else:
-            st.warning("جاري جلب أحدث الأخبار الرياضية...")
+            st.link_button("🔗 قراءة الخبر كاملاً من المصدر الرسمي", entry.link)
+            st.divider()
     else:
-        st.warning("تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر.")
-
-with tab_videos:
-    st.header("🎬 مقاطع الفيديو والأهداف الرياضية المباشرة")
-    video_option = st.selectbox(
-        "📺 اختر نوع الفيديو:",
-        [
-            "أبرز أهداف ومهارات كرة القدم ⚽",
-            "ملخصات سباقات الفورمولا 1 والسرعة 🏎️",
-            "أفضل لقطات ومهارات كرة السلة NBA 🏀"
-        ]
-    )
-    
-    # تحديث روابط الفيديوهات لتتوافق مع محتوى كرة القدم والرياضة الحقيقية
-    if video_option == "أبرز أهداف ومهارات كرة القدم ⚽":
-        st.video("https://www.youtube.com/watch?v=2tXh3W5C30o")
-    elif video_option == "ملخصات سباقات الفورمولا 1 والسرعة 🏎️":
-        st.video("https://www.youtube.com/watch?v=0hK2aWwXb4I")
-    else:
-        st.video("https://www.youtube.com/watch?v=450p7goxZqg")
+        st.warning("جاري جلب أحدث الأخبار الرياضية...")
+else:
+    st.warning("تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر.")
