@@ -23,7 +23,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. مصادر رياضية عربية وعالمية خالصة 100%
+# 2. المصادر الرياضية العربية والعالمية المباشرة
 SPORTS_FEEDS = {
     "⚽ الصحف والشبكات الرياضية (عربي وعالمي)": {
         "يلا كورة - أخبار كرة القدم": "https://www.yallakora.com/rss/news",
@@ -44,23 +44,54 @@ SPORTS_FEEDS = {
     }
 }
 
-# 3. دالة جلب الأخبار لحظياً وتجاوز الحظر
+# 3. دالة جلب الأخبار عبر خدمة وسيطة لتفادي الحظر تماماً
 def fetch_feed_data(url):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
-    }
+    # استخدام خدمة rss2json الموثوقة لتجاوز حظر المواقع وجلب الأخبار فوراً
+    api_url = f"https://api.rss2json.com/v1/api.json?rss_url={url}"
+    try:
+        response = requests.get(api_url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('status') == 'ok':
+                # تحويل البيانات إلى هيكل مطابق لـ feedparser لعدم تغيير باقي الكود
+                class Entry:
+                    def __init__(self, item):
+                        self.title = item.get('title', '')
+                        self.link = item.get('link', '')
+                        self.published = item.get('pubDate', '')
+                        self.summary = item.get('description', '')
+                        self.content = [{'value': item.get('content', '')}]
+                        
+                        # استخراج الصور إن وجدت
+                        thumbnail = item.get('thumbnail', '')
+                        enclosure = item.get('enclosure', {})
+                        img_link = enclosure.get('link', '') if isinstance(enclosure, dict) else ''
+                        
+                        if thumbnail:
+                            self.media_thumbnail = [{'url': thumbnail}]
+                        elif img_link:
+                            self.media_content = [{'url': img_link}]
+                            
+                class Feed:
+                    def __init__(self, items):
+                        self.entries = [Entry(item) for item in items]
+                        
+                return Feed(data.get('items', []))
+    except Exception:
+        pass
+        
+    # الطريقة الاحتياطية المباشرة
+    headers = {'User-Agent': 'Mozilla/5.0'}
     try:
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             return feedparser.parse(response.content)
-        else:
-            return feedparser.parse(url)
     except Exception:
-        return feedparser.parse(url)
+        pass
+        
+    return feedparser.parse(url)
 
-# 4. فلتر ذكي لمنع أي كلمات سياسية نهائياً وضمان الرياضة فقط
+# 4. فلتر ذكي لمنع أي كلمات سياسية وضمان الرياضة فقط
 def is_sports_news(title, summary):
     forbidden_words = ["حماس", "سياسة", "حكومة", "انتخابات", "فلسطين", "غزة", "جيش", "رئيس", "وزير", "برلمان", "عسكري", "انفجار"]
     text = (title + " " + summary).lower()
@@ -71,16 +102,16 @@ def is_sports_news(title, summary):
 
 # 5. دالة استخراج الصور بدقة
 def extract_image_url(entry):
-    if 'media_content' in entry and len(entry.media_content) > 0:
+    if hasattr(entry, 'media_content') and len(entry.media_content) > 0:
         return entry.media_content[0].get('url')
-    if 'media_thumbnail' in entry and len(entry.media_thumbnail) > 0:
+    if hasattr(entry, 'media_thumbnail') and len(entry.media_thumbnail) > 0:
         return entry.media_thumbnail[0].get('url')
-    if 'links' in entry:
+    if hasattr(entry, 'links') and entry.links:
         for link in entry.links:
             if link.get('type', '').startswith('image/'):
                 return link.get('href')
                 
-    content_to_search = getattr(entry, 'summary', '') + getattr(entry, 'content', [{'value': ''}])[0]['value']
+    content_to_search = getattr(entry, 'summary', '')
     soup = BeautifulSoup(content_to_search, 'html.parser')
     img_tag = soup.find('img')
     if img_tag and img_tag.get('src'):
@@ -116,7 +147,6 @@ with tab_news:
     feed = fetch_feed_data(feed_url)
 
     if feed and feed.entries:
-        # فلترة الأخبار لعرض الرياضية فقط واستبعاد أي شوائب سياسية
         filtered_entries = [
             entry for entry in feed.entries 
             if is_sports_news(entry.title, getattr(entry, 'summary', ''))
@@ -126,7 +156,7 @@ with tab_news:
             for entry in filtered_entries[:12]:
                 st.subheader(entry.title)
                 
-                if hasattr(entry, 'published'):
+                if hasattr(entry, 'published') and entry.published:
                     st.caption(f"🕒 وقت النشر: {entry.published}")
                 
                 img_url = extract_image_url(entry)
@@ -142,9 +172,9 @@ with tab_news:
                 st.link_button("🔗 قراءة الخبر كاملاً من المصدر الرسمي", entry.link)
                 st.divider()
         else:
-            st.warning("جاري جلب أحدث الأخبار الرياضية المباشرة...")
+            st.warning("لا توجد أخبار جديدة مطابقة حالياً.")
     else:
-        st.warning("تعذر جلب البيانات من هذا المصدر حالياً، يرجى الضغط على زر التحديث أو اختيار مصدر آخر.")
+        st.warning("تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر.")
 
 with tab_videos:
     st.header("🎬 مقاطع الفيديو والأهداف الرياضية المباشرة")
