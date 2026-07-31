@@ -104,8 +104,7 @@ with tab_news:
     feed = fetch_feed_data(feed_url)
 
     if feed and feed.entries:
-        # عرض عدد الأخبار المسحوبة للتأكد
-        st.success(تم بنجاح جلب أحدث {len(feed.entries)} خبراً من هذا المصدر!)
+        st.success(f"تم بنجاح جلب أحدث {len(feed.entries)} خبراً من هذا المصدر!")
         
         for entry in feed.entries[:10]:
             st.subheader(entry.title)
@@ -126,7 +125,7 @@ with tab_news:
             st.link_button("🔗 قراءة المقال/الخبر كاملاً من المصدر الرسمي", entry.link)
             st.divider()
     else:
-        st.warning("عذراً، هذا المصدر يمنع الوصول المؤقت أو الخلاصة فارغة حالياً. جرب اختيار 'بي بي سي عربي' أو 'سكاي نيوز عربية' وستعمل معك فوراً.")
+        st.warning("عذراً، هذا المصدر يمنع الوصول المؤقت أو الخلاصة فارغة حالياً. جرب اختيار مصدر آخر وستعمل معك فوراً.")
 
 with tab_videos:
     st.header("🎬 التغطيات المرئية والفيديوهات الرياضية")
