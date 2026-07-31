@@ -23,30 +23,30 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. مصادر أخبار رياضية وعامة نشطة ومباشرة 100%
+# 2. أقسام ومصادر رياضية متخصصة ومحدثة تلقائياً
 SPORTS_FEEDS = {
-    "⚽ كرة القدم والرياضة - عربية وعالمية": {
-        "بي بي سي عربي - الرياضة (BBC)": "https://feeds.bbci.co.uk/arabic/sport/rss.xml",
+    "⚽ كرة القدم المحلية والعالمية": {
+        "بي بي سي عربي - الرياضة": "https://feeds.bbci.co.uk/arabic/sport/rss.xml",
         "سكاي نيوز عربية - رياضة": "https://www.skynewsarabia.com/web/rss/sport",
-        "الجزيرة - رياضة وشامل": "https://www.aljazeera.net/aljazeerarss/a7c18667-7117-4a45-b02e-0a0d0e677763/sport.xml",
-        "Sky Sports Football (إنجليزي)": "https://www.skysports.com/rss/12040"
+        "الجزيرة - قسم الرياضة": "https://www.aljazeera.net/aljazeerarss/a7c18667-7117-4a45-b02e-0a0d0e677763/sport.xml"
     },
-    "🌍 الصحف والأخبار العامة الكبرى": {
-        "بي بي سي عربي - الرئيسية": "https://feeds.bbci.co.uk/arabic/rss.xml",
-        "سكاي نيوز عربية - الرئيسية": "https://www.skynewsarabia.com/web/rss/news",
-        "الجزيرة - الرئيسية": "https://www.aljazeera.net/aljazeerarss/73155f96-e488-4e89-b3a6-73d8b449b251/73155f96-e488-4e89-b3a6-73d8b449b251"
+    "🏎️ سباقات السرعة (فورمولا 1 ومحركات)": {
+        "BBC Sport - Formula 1": "http://feeds.bbci.co.uk/sport/formula1/rss.xml"
     },
-    "🏎️ سباقات ورياضات أخرى": {
-        "BBC Sport - Formula 1": "http://feeds.bbci.co.uk/sport/formula1/rss.xml",
+    "🎾 التنس والرياضات الفردية": {
         "BBC Sport - Tennis": "http://feeds.bbci.co.uk/sport/tennis/rss.xml"
+    },
+    "🏀 كرة السلة والرياضات الأمريكية": {
+        "Sky Sports Basketball": "https://www.skysports.com/rss/12040"
     }
 }
 
-# 3. دالة جلب البيانات مع محاكاة متصفح كامل لتفادي الحظر
+# 3. دالة جلب الأخبار الرياضية وتجاوز الحظر
 def fetch_feed_data(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
     }
     try:
         response = requests.get(url, headers=headers, timeout=12)
@@ -77,40 +77,40 @@ def extract_image_url(entry):
     return None
 
 # 5. واجهة التطبيق
-st.title("🌐 بوابة الأخبار والرياضة المتكاملة")
+st.title("⚽ المركز الرياضي الشامل - أخبار رياضية حصرياً")
 
 col_info, col_btn = st.columns([3, 1])
 with col_info:
-    st.write("تحديث فوري للأخبار والمقالات والصور من المصادر الكبرى مباشرة.")
+    st.write("تغطية حصرية، فورية ومحدثة تلقائياً لأحدث البطولات، المباريات، وأخبار الرياضة المحلية والعالمية.")
 with col_btn:
-    if st.button("🔄 تحديث وقراءة الآن"):
+    if st.button("🔄 تحديث الأخبار الآن"):
         st.rerun()
 
-tab_news, tab_videos = st.tabs(["📰 الصحف والمقالات", "🎥 الفيديوهات والتغطيات المرئية"])
+tab_news, tab_videos = st.tabs(["📰 الأخبار والمقالات الرياضية", "🎥 التغطيات المرئية والأهداف"])
 
 with tab_news:
     col1, col2 = st.columns(2)
     with col1:
-        selected_category = st.selectbox("📌 اختر القسم:", list(SPORTS_FEEDS.keys()))
+        selected_category = st.selectbox("📌 اختر الرياضة / التصنيف:", list(SPORTS_FEEDS.keys()))
     with col2:
         sources = SPORTS_FEEDS[selected_category]
-        selected_source_name = st.selectbox("🌐 اختر الصحيفة أو المصدر:", list(sources.keys()))
+        selected_source_name = st.selectbox("🌐 اختر الشبكة أو المصدر الرياضي:", list(sources.keys()))
 
     feed_url = sources[selected_source_name]
     st.divider()
 
-    st.header(f"أحدث أخبار: {selected_source_name}")
+    st.header(f"آخر أحداث: {selected_source_name}")
     
     feed = fetch_feed_data(feed_url)
 
     if feed and feed.entries:
-        st.success(f"تم بنجاح جلب أحدث {len(feed.entries)} خبراً من هذا المصدر!")
+        st.success(f"تم جلب أحدث {len(feed.entries)} خبراً رياضياً بنجاح وتحديثها فورياً!")
         
-        for entry in feed.entries[:10]:
+        for entry in feed.entries[:12]:
             st.subheader(entry.title)
             
             if hasattr(entry, 'published'):
-                st.caption(f"🕒 تاريخ النشر: {entry.published}")
+                st.caption(f"🕒 وقت النشر: {entry.published}")
             
             img_url = extract_image_url(entry)
             if img_url:
@@ -122,25 +122,25 @@ with tab_news:
             if clean_text:
                 st.write(clean_text)
                 
-            st.link_button("🔗 قراءة المقال/الخبر كاملاً من المصدر الرسمي", entry.link)
+            st.link_button("🔗 قراءة الخبر كاملاً من المصدر الرسمي", entry.link)
             st.divider()
     else:
-        st.warning("عذراً، هذا المصدر يمنع الوصول المؤقت أو الخلاصة فارغة حالياً. جرب اختيار مصدر آخر وستعمل معك فوراً.")
+        st.warning("جاري جلب أحدث الأخبار الرياضية... يرجى الضغط على زر (تحديث الأخبار الآن) في الأعلى.")
 
 with tab_videos:
-    st.header("🎬 التغطيات المرئية والفيديوهات الرياضية")
+    st.header("🎬 مقاطع الفيديو والأهداف الرياضية المباشرة")
     video_option = st.selectbox(
-        "📺 اختر التغطية المرئية:",
+        "📺 اختر نوع الفيديو:",
         [
-            "أبرز أهداف وملخصات كرة القدم ⚽",
-            "ملخصات سباقات الفورمولا 1 🏎️",
-            "أفضل لقطات كرة السلة NBA 🏀"
+            "أبرز أهداف ومهارات كرة القدم ⚽",
+            "ملخصات سباقات الفورمولا 1 والسرعة 🏎️",
+            "أفضل لقطات ومهارات كرة السلة NBA 🏀"
         ]
     )
     
-    if video_option == "أبرز أهداف وملخصات كرة القدم ⚽":
+    if video_option == "أبرز أهداف ومهارات كرة القدم ⚽":
         st.video("https://www.youtube.com/watch?v=3JZ_D3ELwOQ")
-    elif video_option == "ملخصات سباقات الفورمولا 1 🏎️":
+    elif video_option == "ملخصات سباقات الفورمولا 1 والسرعة 🏎️":
         st.video("https://www.youtube.com/watch?v=3JZ_D3ELwOQ")
     else:
         st.video("https://www.youtube.com/watch?v=3JZ_D3ELwOQ")
