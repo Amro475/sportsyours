@@ -158,9 +158,10 @@ with tab_videos:
         ]
     )
     
+    # تحديث روابط الفيديوهات لتتوافق مع محتوى كرة القدم والرياضة الحقيقية
     if video_option == "أبرز أهداف ومهارات كرة القدم ⚽":
-        st.video("https://www.youtube.com/watch?v=3JZ_D3ELwOQ")
+        st.video("https://www.youtube.com/watch?v=2tXh3W5C30o")
     elif video_option == "ملخصات سباقات الفورمولا 1 والسرعة 🏎️":
-        st.video("https://www.youtube.com/watch?v=3JZ_D3ELwOQ")
+        st.video("https://www.youtube.com/watch?v=0hK2aWwXb4I")
     else:
-        st.video("https://www.youtube.com/watch?v=3JZ_D3ELwOQ")
+        st.video("https://www.youtube.com/watch?v=450p7goxZqg")
