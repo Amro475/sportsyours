@@ -5,44 +5,79 @@ from bs4 import BeautifulSoup
 
 # 1. إعدادات الصفحة والواجهة
 st.set_page_config(
-    page_title="المركز الرياضي الشامل",
-    page_icon="⚽",
-    layout="wide"
+    page_title="المنصة الإخبارية الشاملة",
+    page_icon="🌍",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# محاذاة النص والاتجاه من اليمين لليسار (RTL)
-st.markdown("""
+# 2. القائمة الجانبية لإعدادات القارئ (اللغة والسمات)
+st.sidebar.header("⚙️ إعدادات القارئ والتحكم")
+
+# اختيار اللغة
+lang_option = st.sidebar.selectbox(
+    "🌐 اختر اللغة / Language",
+    ["العربية", "English"]
+)
+
+# ضبط الاتجاه حسب اللغة
+if lang_option == "العربية":
+    direction = "rtl"
+    align = "right"
+    ui_title = "🌍 المنصة الإخبارية الشاملة - لحظة بلحظة"
+    ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العربية والعالمية في كافة المجالات."
+    ui_select_cat = "📌 اختر التصنيف الإخباري:"
+    ui_select_source = "🌐 اختر الصحيفة أو المصدر:"
+    ui_btn_refresh = "🔄 تحديث الأخبار الآن"
+    ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الرسمي"
+    ui_loading = "جاري جلب أحدث الأخبار الفورية..."
+    ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر."
+else:
+    direction = "ltr"
+    align = "left"
+    ui_title = "🌍 Global Comprehensive News Platform - Real-time"
+    ui_desc = "Instant and live coverage of the latest Arab and international news across all fields."
+    ui_select_cat = "📌 Select News Category:"
+    ui_select_source = "🌐 Select Newspaper or Source:"
+    ui_btn_refresh = "🔄 Refresh News Now"
+    ui_read_more = "🔗 Read full story from official source"
+    ui_loading = "Fetching latest breaking news..."
+    ui_error = "Could not fetch data from this source right now, please choose another source."
+
+# تطبيق اتجاه الصفحة (RTL / LTR)
+st.markdown(f"""
     <style>
-    div[data-testid="stAppViewContainer"] {
-        direction: rtl;
-        text-align: right;
+    div[data-testid="stAppViewContainer"] {{
+        direction: {direction};
+        text-align: {align};
     }
-    div[data-testid="stHeader"] {
-        direction: rtl;
+    div[data-testid="stHeader"] {{
+        direction: {direction};
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 2. المصادر الرياضية النشطة والمضمونة 100% (بدون حظر)
-SPORTS_FEEDS = {
-    "⚽ شبكات كرة القدم العالمية الكبرى": {
+# 3. جدول المصادر الإخبارية الشاملة (رياضة، سياسة، تكنولوجيا، اقتصاد)
+NEWS_FEEDS = {
+    "⚽ الرياضة / Sports": {
+        "بطولات - أخبار الرياضة": "https://www.btolat.com/rss/news",
         "Sky Sports Football": "https://www.skysports.com/rss/12040",
-        "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news",
-        "BBC Sport - Football": "http://feeds.bbci.co.uk/sport/football/rss.xml"
+        "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news"
     },
-    "🏎️ سباقات السرعة والمحركات": {
-        "Motorsport.com F1": "https://www.motorsport.com/rss/f1/news/",
-        "BBC Sport - Formula 1": "http://feeds.bbci.co.uk/sport/formula1/rss.xml"
+    "🏛️ السياسة / Politics": {
+        "بي بي سي عربي - الرئيسية": "https://feeds.bbci.co.uk/arabic/rss.xml",
+        "رويترز - أخبار سياسية وعامة": "https://www.reutersagency.com/feed/?best-regions=middle-east&post_type=best"
     },
-    "🎾 التنس والرياضات الفردية": {
-        "BBC Sport - Tennis": "http://feeds.bbci.co.uk/sport/tennis/rss.xml"
+    "💻 التكنولوجيا / Technology": {
+        "تكنولوجيا المعلومات (BBC)": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
+        "TechCrunch": "https://techcrunch.com/feed/"
     },
-    "🏀 كرة السلة والرياضات الأمريكية": {
-        "Sky Sports Basketball": "https://www.skysports.com/rss/12040"
+    "📈 الاقتصاد والأعمال / Economy": {
+        "بي بي سي عربي - الاقتصاد": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
     }
 }
 
-# 3. دالة جلب الأخبار وتجاوز الحظر
+# 4. دالة جلب الأخبار فور صدورها مع تجاوز الحظر
 def fetch_feed_data(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -58,20 +93,7 @@ def fetch_feed_data(url):
     except Exception:
         return feedparser.parse(url)
 
-# 4. فلتر ذكي صارم لمنع أي كلمات سياسية أو غير رياضية نهائياً
-def is_sports_news(title, summary):
-    forbidden_words = [
-        "حماس", "سياسة", "حكومة", "انتخابات", "فلسطين", "غزة", "جيش", 
-        "رئيس", "وزير", "برلمان", "عسكري", "انفجار", "حرب", "أمريكية", 
-        "إيران", "صراع", "منطقة", "واشنطن", "الرئيس"
-    ]
-    text = (title + " " + summary).lower()
-    for word in forbidden_words:
-        if word in text:
-            return False
-    return True
-
-# 5. دالة استخراج الصور بدقة
+# 5. دالة استخراج الصور بدقة لتظهر بشكل جذاب ومريح للقارئ
 def extract_image_url(entry):
     if 'media_content' in entry and len(entry.media_content) > 0:
         return entry.media_content[0].get('url')
@@ -90,59 +112,53 @@ def extract_image_url(entry):
         
     return None
 
-# 6. واجهة التطبيق
-st.title("⚽ المركز الرياضي الشامل - رياضة فقط")
+# 6. واجهة العرض الرئيسية
+st.title(ui_title)
 
 col_info, col_btn = st.columns([3, 1])
 with col_info:
-    st.write("تغطية حصرية وفورية لأحدث المباريات والأخبار الرياضية الصافية.")
+    st.write(ui_desc)
 with col_btn:
-    if st.button("🔄 تحديث الأخبار الآن"):
+    if st.button(ui_btn_refresh):
         st.rerun()
 
 st.divider()
 
-# القوائم المنسدلة لاختيار القسم والصحيفة مباشرة
+# القوائم المنفصلة لاختيار التصنيف والصحيفة بكل مرونة
 col1, col2 = st.columns(2)
 with col1:
-    selected_category = st.selectbox("📌 اختر القسم الرياضي:", list(SPORTS_FEEDS.keys()))
+    selected_category = st.selectbox(ui_select_cat, list(NEWS_FEEDS.keys()))
 with col2:
-    sources = SPORTS_FEEDS[selected_category]
-    selected_source_name = st.selectbox("🌐 اختر المصدر الرياضي:", list(sources.keys()))
+    sources = NEWS_FEEDS[selected_category]
+    selected_source_name = st.selectbox(ui_select_source, list(sources.keys()))
 
 feed_url = sources[selected_source_name]
 st.divider()
 
-st.header(f"آخر أحداث: {selected_source_name}")
+st.header(f"📌 {selected_source_name}")
 
+# جلب الأخبار فوراً
 feed = fetch_feed_data(feed_url)
 
 if feed and feed.entries:
-    filtered_entries = [
-        entry for entry in feed.entries 
-        if is_sports_news(entry.title, getattr(entry, 'summary', ''))
-    ]
-    
-    if filtered_entries:
-        for entry in filtered_entries[:12]:
-            st.subheader(entry.title)
+    for entry in feed.entries[:15]:
+        st.subheader(entry.title)
+        
+        if hasattr(entry, 'published') and entry.published:
+            st.caption(f"🕒 {entry.published}")
+        
+        # عرض الصورة المرفقة إذا وجدت بشكل جذاب ومتناسق
+        img_url = extract_image_url(entry)
+        if img_url:
+            st.image(img_url, use_column_width=True)
             
-            if hasattr(entry, 'published') and entry.published:
-                st.caption(f"🕒 وقت النشر: {entry.published}")
+        summary_html = getattr(entry, 'summary', '')
+        clean_text = BeautifulSoup(summary_html, "html.parser").get_text().strip()
+        
+        if clean_text:
+            st.write(clean_text)
             
-            img_url = extract_image_url(entry)
-            if img_url:
-                st.image(img_url, use_column_width=True)
-                
-            summary_html = getattr(entry, 'summary', '')
-            clean_text = BeautifulSoup(summary_html, "html.parser").get_text().strip()
-            
-            if clean_text:
-                st.write(clean_text)
-                
-            st.link_button("🔗 قراءة الخبر كاملاً من المصدر الرسمي", entry.link)
-            st.divider()
-    else:
-        st.warning("جاري جلب أحدث الأخبار الرياضية...")
+        st.link_button(ui_read_more, entry.link)
+        st.divider()
 else:
-    st.warning("تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر.")
+    st.warning(ui_error)
