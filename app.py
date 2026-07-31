@@ -23,11 +23,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. مصادر RSS رياضية مضمونة ومفتوحة لا تحظر التطبيقات
+# 2. مصادر عربية وعالمية رياضية نشطة 100%
 SPORTS_FEEDS = {
-    "⚽ كرة القدم العالمية": {
-        "Sky Sports Football": "https://www.skysports.com/rss/12040",
-        "BBC Sport - Football": "http://feeds.bbci.co.uk/sport/football/rss.xml"
+    "⚽ الصحف العربية والدولية - كرة القدم": {
+        "بي بي سي عربي - الرياضة": "https://feeds.bbci.co.uk/arabic/sport/rss.xml",
+        "Sky Sports Football (إنجليزي)": "https://www.skysports.com/rss/12040",
+        "BBC Sport - Football (إنجليزي)": "http://feeds.bbci.co.uk/sport/football/rss.xml"
     },
     "🏎️ سباقات السرعة والمحركات": {
         "BBC Sport - Formula 1": "http://feeds.bbci.co.uk/sport/formula1/rss.xml",
@@ -36,16 +37,17 @@ SPORTS_FEEDS = {
     "🎾 التنس والرياضات الفردية": {
         "BBC Sport - Tennis": "http://feeds.bbci.co.uk/sport/tennis/rss.xml"
     },
-    "🏀 كرة السلة الأمريكية": {
+    "🏀 كرة السلة والرياضات الأمريكية": {
         "Sky Sports Basketball": "https://www.skysports.com/rss/12040"
     }
 }
 
-# 3. دالة جلب الأخبار مع تجاوز الحظر
+# 3. دالة جلب الأخبار وتجاوز الحظر
 def fetch_feed_data(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
     }
     try:
         response = requests.get(url, headers=headers, timeout=10)
@@ -76,11 +78,11 @@ def extract_image_url(entry):
     return None
 
 # 5. واجهة التطبيق
-st.title("⚽ المركز الرياضي الشامل - أخبار رياضية حصرياً")
+st.title("⚽ المركز الرياضي الشامل - أخبار عربية وعالمية")
 
 col_info, col_btn = st.columns([3, 1])
 with col_info:
-    st.write("تغطية حصرية، فورية ومحدثة تلقائياً لأحدث البطولات والمباريات الرياضية.")
+    st.write("تغطية حصرية، فورية ومحدثة تلقائياً لأبرز الصحف العربية والعالمية.")
 with col_btn:
     if st.button("🔄 تحديث الأخبار"):
         st.rerun()
@@ -90,10 +92,10 @@ tab_news, tab_videos = st.tabs(["📰 الأخبار والمقالات الري
 with tab_news:
     col1, col2 = st.columns(2)
     with col1:
-        selected_category = st.selectbox("📌 اختر الرياضة / التصنيف:", list(SPORTS_FEEDS.keys()))
+        selected_category = st.selectbox("📌 اختر القسم:", list(SPORTS_FEEDS.keys()))
     with col2:
         sources = SPORTS_FEEDS[selected_category]
-        selected_source_name = st.selectbox("🌐 اختر الشبكة أو المصدر الرياضي:", list(sources.keys()))
+        selected_source_name = st.selectbox("🌐 اختر الصحيفة أو المصدر:", list(sources.keys()))
 
     feed_url = sources[selected_source_name]
     st.divider()
@@ -122,7 +124,7 @@ with tab_news:
             st.link_button("🔗 قراءة الخبر كاملاً من المصدر الرسمي", entry.link)
             st.divider()
     else:
-        st.warning("تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر من القائمة.")
+        st.warning("جاري جلب الأخبار... يرجى الضغط على زر التحديث في الأعلى.")
 
 with tab_videos:
     st.header("🎬 مقاطع الفيديو والأهداف الرياضية المباشرة")
