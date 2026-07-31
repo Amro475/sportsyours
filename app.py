@@ -7,11 +7,10 @@ from bs4 import BeautifulSoup
 st.set_page_config(
     page_title="المنصة الإخبارية الشاملة",
     page_icon="🌍",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-# 2. القائمة الجانبية لإعدادات القارئ (اللغة والسمات)
+# 2. القائمة الجانبية لإعدادات القارئ (اللغة)
 with st.sidebar:
     st.markdown("### ⚙️ إعدادات القارئ")
     lang_option = st.selectbox(
@@ -19,55 +18,24 @@ with st.sidebar:
         ["العربية", "English"]
     )
     st.divider()
-    st.markdown("💡 **نصيحة:** يمكنك التحكم بالوضع الليلي أو النهاري من إعدادات المتصفح أو القائمة الرئيسية لمتصفح Streamlit.")
 
-# ضبط النصوص والاتجاه حسب اللغة المتاحة
+# ضبط النصوص حسب اللغة المختارة بدون تعديل CSS معقد يسبب تداخل
 if lang_option == "العربية":
     ui_title = "🌍 المنصة الإخبارية الشاملة"
     ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العربية والعالمية في كافة المجالات لحظة بلحظة."
     ui_select_cat = "📌 اختر التصنيف الإخباري:"
     ui_select_source = "🌐 اختر الصحيفة أو المصدر:"
-    ui_btn_refresh = "🔄 تحديث"
+    ui_btn_refresh = "🔄 تحديث الأخبار"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الرسمي"
     ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر."
-    
-    # تطبيق الاتجاه العربي RTL والتنسيق النظيف
-    st.markdown("""
-        <style>
-        div[data-testid="stAppViewContainer"] {
-            direction: rtl;
-            text-align: right;
-        }
-        div[data-testid="stHeader"] {
-            direction: rtl;
-        }
-        .stSelectbox label {
-            text-align: right;
-            direction: rtl;
-        }
-        </style>
-    """, unsafe_allow_html=True)
 else:
     ui_title = "🌍 Global Comprehensive News Platform"
     ui_desc = "Instant and live coverage of the latest Arab and international news across all fields in real-time."
     ui_select_cat = "📌 Select News Category:"
     ui_select_source = "🌐 Select Newspaper or Source:"
-    ui_btn_refresh = "🔄 Refresh"
+    ui_btn_refresh = "🔄 Refresh News"
     ui_read_more = "🔗 Read full story from official source"
     ui_error = "Could not fetch data from this source right now, please choose another source."
-    
-    # تطبيق الاتجاه الإنجليزي LTR
-    st.markdown("""
-        <style>
-        div[data-testid="stAppViewContainer"] {
-            direction: ltr;
-            text-align: left;
-        }
-        div[data-testid="stHeader"] {
-            direction: ltr;
-        }
-        </style>
-    """, unsafe_allow_html=Header if 'Header' in globals() else True)
 
 # 3. جدول المصادر الإخبارية الشاملة (رياضة، سياسة، تكنولوجيا، اقتصاد)
 NEWS_FEEDS = {
@@ -124,40 +92,35 @@ def extract_image_url(entry):
         
     return None
 
-# 6. واجهة العرض الرئيسية بتصميم منظم ومريح
+# 6. واجهة العرض الرئيسية
 st.title(ui_title)
 st.write(ui_desc)
 
-# زر التحديث بشكل أنيق في الأفل
 if st.button(ui_btn_refresh):
     st.rerun()
 
-st.markdown("---")
+st.divider()
 
-# القوائم المنفصلة بجانب بعضها بشكل متناسق لا يتداخل مع الشاشات الصغيرة
-col1, col2 = st.columns(2)
-with col1:
-    selected_category = st.selectbox(ui_select_cat, list(NEWS_FEEDS.keys()))
-with col2:
-    sources = NEWS_FEEDS[selected_category]
-    selected_source_name = st.selectbox(ui_select_source, list(sources.keys()))
+# القوائم المنفصلة بشكل مرتب وآمن
+selected_category = st.selectbox(ui_select_cat, list(NEWS_FEEDS.keys()))
+sources = NEWS_FEEDS[selected_category]
+selected_source_name = st.selectbox(ui_select_source, list(sources.keys()))
 
 feed_url = sources[selected_source_name]
-st.markdown("---")
+st.divider()
 
-st.markdown(f"### 📌 {selected_source_name}")
+st.subheader(f"📌 {selected_source_name}")
 
 # جلب الأخبار فوراً
 feed = fetch_feed_data(feed_url)
 
 if feed and feed.entries:
     for entry in feed.entries[:15]:
-        st.markdown(f"#### {entry.title}")
+        st.markdown(f"### {entry.title}")
         
         if hasattr(entry, 'published') and entry.published:
             st.caption(f"🕒 {entry.published}")
         
-        # عرض الصورة المرفقة إذا وجدت بشكل جذاب ومتناسق
         img_url = extract_image_url(entry)
         if img_url:
             st.image(img_url, use_column_width=True)
@@ -169,6 +132,6 @@ if feed and feed.entries:
             st.write(clean_text)
             
         st.link_button(ui_read_more, entry.link)
-        st.markdown("---")
+        st.divider()
 else:
     st.warning(ui_error)
