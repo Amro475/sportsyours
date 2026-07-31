@@ -20,45 +20,49 @@ lang_option = st.sidebar.selectbox(
     ["العربية", "English"]
 )
 
-# ضبط الاتجاه حسب اللغة
+# ضبط النصوص والاتجاه حسب اللغة المتاحة
 if lang_option == "العربية":
-    direction = "rtl"
-    align = "right"
     ui_title = "🌍 المنصة الإخبارية الشاملة - لحظة بلحظة"
     ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العربية والعالمية في كافة المجالات."
     ui_select_cat = "📌 اختر التصنيف الإخباري:"
     ui_select_source = "🌐 اختر الصحيفة أو المصدر:"
     ui_btn_refresh = "🔄 تحديث الأخبار الآن"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الرسمي"
-    ui_loading = "جاري جلب أحدث الأخبار الفورية..."
     ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر."
+    
+    # تطبيق الاتجاه العربي RTL
+    st.markdown("""
+        <style>
+        div[data-testid="stAppViewContainer"] {
+            direction: rtl;
+            text-align: right;
+        }
+        div[data-testid="stHeader"] {
+            direction: rtl;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 else:
-    direction = "ltr"
-    align = "left"
     ui_title = "🌍 Global Comprehensive News Platform - Real-time"
     ui_desc = "Instant and live coverage of the latest Arab and international news across all fields."
     ui_select_cat = "📌 Select News Category:"
     ui_select_source = "🌐 Select Newspaper or Source:"
     ui_btn_refresh = "🔄 Refresh News Now"
     ui_read_more = "🔗 Read full story from official source"
-    ui_loading = "Fetching latest breaking news..."
     ui_error = "Could not fetch data from this source right now, please choose another source."
-
-# تطبيق اتجاه الصفحة (RTL / LTR) بدون أخطاء برمجية
-st.markdown(
-    f"""
-    <style>
-    div[data-testid="stAppViewContainer"] {{
-        direction: {direction};
-        text-align: {align};
-    }
-    div[data-testid="stHeader"] {{
-        direction: {direction};
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+    
+    # تطبيق الاتجاه الإنجليزي LTR
+    st.markdown("""
+        <style>
+        div[data-testid="stAppViewContainer"] {
+            direction: ltr;
+            text-align: left;
+        }
+        div[data-testid="stHeader"] {
+            direction: ltr;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
 # 3. جدول المصادر الإخبارية الشاملة (رياضة، سياسة، تكنولوجيا، اقتصاد)
 NEWS_FEEDS = {
