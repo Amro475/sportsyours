@@ -23,9 +23,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. مصادر رياضية خالصة 100% (تمت إزالة بي بي سي نهائياً لعدم خلط السياسة)
+# 2. الصحف والمصادر الرياضية العربية والعالمية الخالصة 100%
 SPORTS_FEEDS = {
-    "⚽ أخبار كرة القدم والبطولات": {
+    "⚽ الصحف والشبكات الرياضية العربية": {
+        "بطولات - أخبار الرياضة": "https://www.btolat.com/rss/news",
+        "يلا كورة - أخبار كرة القدم": "https://www.yallakora.com/rss/news"
+    },
+    "🌍 الصحف والشبكات الرياضية العالمية": {
         "Sky Sports Football": "https://www.skysports.com/rss/12040",
         "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news"
     },
@@ -53,12 +57,12 @@ def fetch_feed_data(url):
     except Exception:
         return feedparser.parse(url)
 
-# 4. فلتر ذكي إضافي لحجب أي كلمات سياسية أو عسكرية
+# 4. فلتر ذكي صارم لمنع أي كلمات سياسية أو غير رياضية نهائياً
 def is_sports_news(title, summary):
     forbidden_words = [
         "حماس", "سياسة", "حكومة", "انتخابات", "فلسطين", "غزة", "جيش", 
         "رئيس", "وزير", "برلمان", "عسكري", "انفجار", "حرب", "أمريكية", 
-        "إيران", "صراع", "منطقة", "واشنطن"
+        "إيران", "صراع", "منطقة", "واشنطن", "الرئيس", "انتخابات"
     ]
     text = (title + " " + summary).lower()
     for word in forbidden_words:
@@ -86,11 +90,11 @@ def extract_image_url(entry):
     return None
 
 # 6. واجهة التطبيق
-st.title("⚽ المركز الرياضي الشامل - رياضة فقط")
+st.title("⚽ المركز الرياضي الشامل - صحف عربية وعالمية رياضية فقط")
 
 col_info, col_btn = st.columns([3, 1])
 with col_info:
-    st.write("تغطية حصرية وفورية لأحدث المباريات والأخبار الرياضية الصافية.")
+    st.write("تغطية حصرية وفورية لأحدث الأخبار الرياضية من الصحف العربية والعالمية الصافية.")
 with col_btn:
     if st.button("🔄 تحديث الأخبار الآن"):
         st.rerun()
@@ -100,10 +104,10 @@ tab_news, tab_videos = st.tabs(["📰 الأخبار الرياضية", "🎥 ا
 with tab_news:
     col1, col2 = st.columns(2)
     with col1:
-        selected_category = st.selectbox("📌 اختر القسم الرياضي:", list(SPORTS_FEEDS.keys()))
+        selected_category = st.selectbox("📌 اختر القسم:", list(SPORTS_FEEDS.keys()))
     with col2:
         sources = SPORTS_FEEDS[selected_category]
-        selected_source_name = st.selectbox("🌐 اختر المصدر الرياضي:", list(sources.keys()))
+        selected_source_name = st.selectbox("🌐 اختر الصحيفة أو المصدر:", list(sources.keys()))
 
     feed_url = sources[selected_source_name]
     st.divider()
