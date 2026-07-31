@@ -41,28 +41,56 @@ SPORTS_FEEDS = {
     }
 }
 
-# 3. دالة جلب الأخبار وتجاوز الحظر
+# 3. دالة جلب الأخبار عبر وسيط لتجاوز الحظر تماماً وضمان السرعة
 def fetch_feed_data(url):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-    }
+    api_url = f"https://api.rss2json.com/v1/api.json?rss_url={url}"
+    try:
+        response = requests.get(api_url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('status') == 'ok':
+                class Entry:
+                    def __init__(self, item):
+                        self.title = item.get('title', '')
+                        self.link = item.get('link', '')
+                        self.published = item.get('pubDate', '')
+                        self.summary = item.get('description', '')
+                        self.content = [{'value': item.get('content', '')}]
+                        
+                        thumbnail = item.get('thumbnail', '')
+                        enclosure = item.get('enclosure', {})
+                        img_link = enclosure.get('link', '') if isinstance(enclosure, dict) else ''
+                        
+                        if thumbnail:
+                            self.media_thumbnail = [{'url': thumbnail}]
+                        elif img_link:
+                            self.media_content = [{'url': img_link}]
+                            
+                class Feed:
+                    def __init__(self, items):
+                        self.entries = [Entry(item) for item in items]
+                        
+                return Feed(data.get('items', []))
+    except Exception:
+        pass
+        
+    # الطريقة الاحتياطية المباشرة
+    headers = {'User-Agent': 'Mozilla/5.0'}
     try:
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             return feedparser.parse(response.content)
-        else:
-            return feedparser.parse(url)
     except Exception:
-        return feedparser.parse(url)
+        pass
+        
+    return feedparser.parse(url)
 
 # 4. فلتر ذكي صارم لمنع أي كلمات سياسية أو غير رياضية نهائياً
 def is_sports_news(title, summary):
     forbidden_words = [
         "حماس", "سياسة", "حكومة", "انتخابات", "فلسطين", "غزة", "جيش", 
         "رئيس", "وزير", "برلمان", "عسكري", "انفجار", "حرب", "أمريكية", 
-        "إيران", "صراع", "منطقة", "واشنطن", "الرئيس", "انتخابات"
+        "إيران", "صراع", "منطقة", "واشنطن", "الرئيس"
     ]
     text = (title + " " + summary).lower()
     for word in forbidden_words:
@@ -72,16 +100,16 @@ def is_sports_news(title, summary):
 
 # 5. دالة استخراج الصور بدقة
 def extract_image_url(entry):
-    if 'media_content' in entry and len(entry.media_content) > 0:
+    if hasattr(entry, 'media_content') and len(entry.media_content) > 0:
         return entry.media_content[0].get('url')
-    if 'media_thumbnail' in entry and len(entry.media_thumbnail) > 0:
+    if hasattr(entry, 'media_thumbnail') and len(entry.media_thumbnail) > 0:
         return entry.media_thumbnail[0].get('url')
-    if 'links' in entry:
+    if hasattr(entry, 'links') and entry.links:
         for link in entry.links:
             if link.get('type', '').startswith('image/'):
                 return link.get('href')
                 
-    content_to_search = getattr(entry, 'summary', '') + getattr(entry, 'content', [{'value': ''}])[0]['value']
+    content_to_search = getattr(entry, 'summary', '')
     soup = BeautifulSoup(content_to_search, 'html.parser')
     img_tag = soup.find('img')
     if img_tag and img_tag.get('src'):
