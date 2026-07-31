@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# محاذاة النص والاتجاة من اليمين لليسار (RTL)
+# محاذاة النص والاتجاه من اليمين لليسار (RTL)
 st.markdown("""
     <style>
     div[data-testid="stAppViewContainer"] {
@@ -23,33 +23,32 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. مصادر أخبار رياضية دقيقة وخالصة
+# 2. مصادر RSS رياضية مضمونة ومفتوحة لا تحظر التطبيقات
 SPORTS_FEEDS = {
-    "⚽ كرة القدم المحلية والعالمية": {
-        "سكاي نيوز عربية - رياضة": "https://www.skynewsarabia.com/web/rss/sport",
-        "الجزيرة - قسم الرياضة": "https://www.aljazeera.net/aljazeerarss/a7c18667-7117-4a45-b02e-0a0d0e677763/sport.xml",
-        "Sky Sports Football": "https://www.skysports.com/rss/12040"
+    "⚽ كرة القدم العالمية": {
+        "Sky Sports Football": "https://www.skysports.com/rss/12040",
+        "BBC Sport - Football": "http://feeds.bbci.co.uk/sport/football/rss.xml"
     },
     "🏎️ سباقات السرعة والمحركات": {
-        "BBC Sport - Formula 1": "http://feeds.bbci.co.uk/sport/formula1/rss.xml"
+        "BBC Sport - Formula 1": "http://feeds.bbci.co.uk/sport/formula1/rss.xml",
+        "Motorsport.com F1": "https://www.motorsport.com/rss/f1/news/"
     },
     "🎾 التنس والرياضات الفردية": {
         "BBC Sport - Tennis": "http://feeds.bbci.co.uk/sport/tennis/rss.xml"
     },
-    "🏀 كرة السلة والرياضات الأمريكية": {
+    "🏀 كرة السلة الأمريكية": {
         "Sky Sports Basketball": "https://www.skysports.com/rss/12040"
     }
 }
 
-# 3. دالة جلب الأخبار الرياضية وتجاوز الحظر
+# 3. دالة جلب الأخبار مع تجاوز الحظر
 def fetch_feed_data(url):
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
     }
     try:
-        response = requests.get(url, headers=headers, timeout=12)
+        response = requests.get(url, headers=headers, timeout=10)
         if response.status_code == 200:
             return feedparser.parse(response.content)
         else:
@@ -123,7 +122,7 @@ with tab_news:
             st.link_button("🔗 قراءة الخبر كاملاً من المصدر الرسمي", entry.link)
             st.divider()
     else:
-        st.warning("جاري جلب أحدث الأخبار الرياضية... يرجى الضغط على زر التحديث في الأعلى.")
+        st.warning("تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر من القائمة.")
 
 with tab_videos:
     st.header("🎬 مقاطع الفيديو والأهداف الرياضية المباشرة")
