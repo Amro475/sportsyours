@@ -23,12 +23,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. مصادر عربية وعالمية رياضية نشطة 100%
+# 2. مصادر رياضية متخصصة وخالصة 100% (بدون أي سياسة)
 SPORTS_FEEDS = {
-    "⚽ الصحف العربية والدولية - كرة القدم": {
-        "بي بي سي عربي - الرياضة": "https://feeds.bbci.co.uk/arabic/sport/rss.xml",
+    "⚽ الصحف والشبكات الرياضية - كرة القدم": {
         "Sky Sports Football (إنجليزي)": "https://www.skysports.com/rss/12040",
-        "BBC Sport - Football (إنجليزي)": "http://feeds.bbci.co.uk/sport/football/rss.xml"
+        "BBC Sport - Football (إنجليزي)": "http://feeds.bbci.co.uk/sport/football/rss.xml",
+        "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news"
     },
     "🏎️ سباقات السرعة والمحركات": {
         "BBC Sport - Formula 1": "http://feeds.bbci.co.uk/sport/formula1/rss.xml",
@@ -78,11 +78,11 @@ def extract_image_url(entry):
     return None
 
 # 5. واجهة التطبيق
-st.title("⚽ المركز الرياضي الشامل - أخبار عربية وعالمية")
+st.title("⚽ المركز الرياضي الشامل - أخبار رياضية فقط")
 
 col_info, col_btn = st.columns([3, 1])
 with col_info:
-    st.write("تغطية حصرية، فورية ومحدثة تلقائياً لأبرز الصحف العربية والعالمية.")
+    st.write("تغطية رياضية خالصة 100% لأبرز البطولات، الدوريات، والمنافسات العالمية.")
 with col_btn:
     if st.button("🔄 تحديث الأخبار"):
         st.rerun()
@@ -124,7 +124,7 @@ with tab_news:
             st.link_button("🔗 قراءة الخبر كاملاً من المصدر الرسمي", entry.link)
             st.divider()
     else:
-        st.warning("جاري جلب الأخبار... يرجى الضغط على زر التحديث في الأعلى.")
+        st.warning("جاري جلب الأخبار الرياضية... يرجى الضغط على زر التحديث في الأعلى.")
 
 with tab_videos:
     st.header("🎬 مقاطع الفيديو والأهداف الرياضية المباشرة")
