@@ -3,14 +3,14 @@ import feedparser
 import requests
 from bs4 import BeautifulSoup
 
-# 1. إعدادات الصفحة والواجهة
+# 1. إعدادات الصفحة
 st.set_page_config(
     page_title="المركز الرياضي الشامل",
     page_icon="⚽",
     layout="wide"
 )
 
-# محاذاة النص والاتجاه من اليمين لليسامر (RTL)
+# محاذاة النص والاتجاه (RTL)
 st.markdown("""
     <style>
     div[data-testid="stAppViewContainer"] {
@@ -23,7 +23,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. مصادر أخبار مجربة ومفتوحة
+# 2. المصادر الرياضية
 SPORTS_FEEDS = {
     "⚽ كرة القدم - عربية ومصرية": {
         "روسيا اليوم - رياضة (RT Arabic)": "https://arabic.rt.com/rss/sport/",
@@ -46,11 +46,12 @@ SPORTS_FEEDS = {
     }
 }
 
-# 3. دالة متطورة لجلب البيانات وتجاوز حظر الخوادم (Bypass Blocking)
+# 3. دالة جلب البيانات بدون تخزين مؤقت (تحديث لحظي)
 def fetch_feed_data(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        'Cache-Control': 'no-cache, no-store, must-revalidate',  # منع الكاش نهائياً
+        'Pragma': 'no-cache'
     }
     try:
         response = requests.get(url, headers=headers, timeout=10)
@@ -61,7 +62,7 @@ def fetch_feed_data(url):
     except Exception:
         return feedparser.parse(url)
 
-# 4. دالة استخراج رابط الصورة
+# 4. دالة استخراج الصور
 def extract_image_url(entry):
     if 'media_content' in entry and len(entry.media_content) > 0:
         return entry.media_content[0].get('url')
@@ -80,9 +81,14 @@ def extract_image_url(entry):
         
     return None
 
-# 5. واجهة التطبيق الرئيسية
+# 5. الواجهة
 st.title("🌐 بوابة الأخبار والرياضة المتكاملة")
-st.write("تغطية شاملة لحظة بلحظة لكافة الرياضات والصحف بالصور والتغطيات المرئية.")
+
+# زر التحديث اللحظي
+col_title, col_btn = st.columns([3, 1])
+with col_btn:
+    if st.button("🔄 تحديث الأخبار الآن"):
+        st.rerun()
 
 tab_news, tab_videos = st.tabs(["📰 الصحف والمقالات", "🎥 الفيديوهات والتغطيات المرئية"])
 
@@ -105,6 +111,10 @@ with tab_news:
         for entry in feed.entries[:10]:
             st.subheader(entry.title)
             
+            # عرض وقت نشر الخبر إن وجد
+            if hasattr(entry, 'published'):
+                st.caption(f"🕒 تاريخ النشر: {entry.published}")
+            
             img_url = extract_image_url(entry)
             if img_url:
                 st.image(img_url, use_column_width=True)
@@ -118,12 +128,10 @@ with tab_news:
             st.link_button("🔗 قراءة المقال/الخبر كاملاً من المصدر الرسمي", entry.link)
             st.divider()
     else:
-        st.warning("تعذر جلب الخلاصات من هذا المصدر حالياً بسبب قيود السيرفر، يرجى اختيار مصدر آخر من القائمة.")
+        st.warning("تعذر جلب الخلاصات حالياً، يرجى إعادة المحاولة أو تغيير المصدر.")
 
 with tab_videos:
     st.header("🎬 التغطيات المرئية والفيديوهات الرياضية")
-    st.write("اختر الفيديو أو المقطع المرئي للمشاهدة المباشرة:")
-    
     video_option = st.selectbox(
         "📺 اختر التغطية المرئية:",
         [
@@ -133,7 +141,6 @@ with tab_videos:
         ]
     )
     
-    # استخدام تضمين شبكي بديل ومضمون لتجنب حظر التضمين
     if video_option == "أهداف ولقطات كروية مميزة ⚽":
         st.video("https://youtu.be/3JZ_D3ELwOQ")
     elif video_option == "ملخصات سباقات الفورمولا 1 🏎️":
