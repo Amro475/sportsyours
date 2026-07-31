@@ -26,7 +26,7 @@ if lang_option == "العربية":
     ui_select_source = "🌐 اختر الصحيفة أو المصدر:"
     ui_btn_refresh = "🔄 تحديث الأخبار"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الرسمي"
-    ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر."
+    ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر (مثل بي بي سي أو الجزيرة)."
     ui_prev_page = "◀️ الصفحة السابقة"
     ui_next_page = "الصفحة التالية ▶️"
     ui_page_text = "الصفحة"
@@ -53,17 +53,15 @@ else:
         "📈 Economy": "Economy"
     }
 
-# 3. جدول المصادر الإخبارية الشاملة متضمنة الصحف المصرية والعربية والعالمية
+# 3. جدول المصادر الإخبارية المحدثة والنشطة تماماً
 NEWS_FEEDS = {
     "الرياضة": {
-        "يلا كورة (مصر - رياضة)": "https://www.yallakora.com/rss/news",
+        "بي بي سي سبورت - كرة القدم": "http://feeds.bbci.co.uk/sport/football/rss.xml",
         "بطولات (عربي - رياضة)": "https://www.btolat.com/rss/news",
         "Sky Sports Football": "https://www.skysports.com/rss/12040",
         "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news"
     },
     "السياسة": {
-        "اليوم السابع (مصر)": "https://www.youm7.com/rss/SectionRss?SecID=287",
-        "بوابة الأهرام (مصر)": "https://gate.ahram.org.eg/RSS/1/0.aspx",
         "الجزيرة نت (عربي / سياسة)": "https://www.aljazeera.net/rss",
         "بي بي سي عربي - الرئيسية": "https://feeds.bbci.co.uk/arabic/rss.xml",
         "رويترز - أخبار سياسية وعامة": "https://www.reutersagency.com/feed/?best-regions=middle-east&post_type=best"
@@ -77,21 +75,21 @@ NEWS_FEEDS = {
     }
 }
 
-# 4. دالة جلب الأخبار فور صدورها مع تجاوز الحظر
+# 4. دالة جلب الأخبار المتطورة لتجاوز الحظر وقراءة الـ XML بدقة
 def fetch_feed_data(url):
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
     }
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=15)
         if response.status_code == 200:
             return feedparser.parse(response.content)
-        else:
-            return feedparser.parse(url)
     except Exception:
-        return feedparser.parse(url)
+        pass
+    
+    # محاولة ثانية بديلة مباشرة عبر الـ feedparser في حال فشل الـ requests
+    return feedparser.parse(url)
 
 # 5. دالة استخراج الصور بدقة
 def extract_image_url(entry):
@@ -121,7 +119,7 @@ if st.button(ui_btn_refresh):
 
 st.divider()
 
-# اختيار نوع الخبر عبر الأزرار المباشرة
+# اختيار نوع الخبر عبر الأزرار المباشرة (النقر على نوع الخبر نفسه)
 selected_tab_label = st.radio(
     "",
     options=list(categories.keys()),
