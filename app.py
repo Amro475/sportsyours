@@ -23,19 +23,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. مصادر RSS رياضية نشطة ومضمونة ومستقرة 100% (عربي وعالمي)
+# 2. مصادر رياضية خالصة 100% (تمت إزالة بي بي سي نهائياً لعدم خلط السياسة)
 SPORTS_FEEDS = {
-    "⚽ الأخبار الرياضية العامة (عربي وعالمي)": {
-        "بي بي سي عربي - الرياضة": "https://feeds.bbci.co.uk/arabic/sport/rss.xml",
+    "⚽ أخبار كرة القدم والبطولات": {
         "Sky Sports Football": "https://www.skysports.com/rss/12040",
-        "BBC Sport - Football": "http://feeds.bbci.co.uk/sport/football/rss.xml"
+        "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news"
     },
     "🏎️ سباقات السرعة والمحركات": {
-        "BBC Sport - Formula 1": "http://feeds.bbci.co.uk/sport/formula1/rss.xml",
         "Motorsport.com F1": "https://www.motorsport.com/rss/f1/news/"
-    },
-    "🎾 التنس والرياضات الفردية": {
-        "BBC Sport - Tennis": "http://feeds.bbci.co.uk/sport/tennis/rss.xml"
     },
     "🏀 كرة السلة والرياضات الأمريكية": {
         "Sky Sports Basketball": "https://www.skysports.com/rss/12040"
@@ -58,9 +53,13 @@ def fetch_feed_data(url):
     except Exception:
         return feedparser.parse(url)
 
-# 4. فلتر ذكي لمنع أي شوائب سياسية أو غير رياضية نهائياً
+# 4. فلتر ذكي إضافي لحجب أي كلمات سياسية أو عسكرية
 def is_sports_news(title, summary):
-    forbidden_words = ["حماس", "سياسة", "حكومة", "انتخابات", "فلسطين", "غزة", "جيش", "رئيس", "وزير", "برلمان", "عسكري", "انفجار"]
+    forbidden_words = [
+        "حماس", "سياسة", "حكومة", "انتخابات", "فلسطين", "غزة", "جيش", 
+        "رئيس", "وزير", "برلمان", "عسكري", "انفجار", "حرب", "أمريكية", 
+        "إيران", "صراع", "منطقة", "واشنطن"
+    ]
     text = (title + " " + summary).lower()
     for word in forbidden_words:
         if word in text:
@@ -87,16 +86,16 @@ def extract_image_url(entry):
     return None
 
 # 6. واجهة التطبيق
-st.title("⚽ المركز الرياضي الشامل - صحف عربية وعالمية")
+st.title("⚽ المركز الرياضي الشامل - رياضة فقط")
 
 col_info, col_btn = st.columns([3, 1])
 with col_info:
-    st.write("تغطية رياضية فورية ومحدثة لحظة بلحظة للصحف الرياضية العربية والعالمية.")
+    st.write("تغطية حصرية وفورية لأحدث المباريات والأخبار الرياضية الصافية.")
 with col_btn:
     if st.button("🔄 تحديث الأخبار الآن"):
         st.rerun()
 
-tab_news, tab_videos = st.tabs(["📰 الأخبار الرياضية (عربي وعالمي)", "🎥 التغطيات المرئية والأهداف"])
+tab_news, tab_videos = st.tabs(["📰 الأخبار الرياضية", "🎥 التغطيات المرئية والأهداف"])
 
 with tab_news:
     col1, col2 = st.columns(2)
@@ -104,7 +103,7 @@ with tab_news:
         selected_category = st.selectbox("📌 اختر القسم الرياضي:", list(SPORTS_FEEDS.keys()))
     with col2:
         sources = SPORTS_FEEDS[selected_category]
-        selected_source_name = st.selectbox("🌐 اختر الصحيفة أو المصدر:", list(sources.keys()))
+        selected_source_name = st.selectbox("🌐 اختر المصدر الرياضي:", list(sources.keys()))
 
     feed_url = sources[selected_source_name]
     st.divider()
@@ -139,7 +138,7 @@ with tab_news:
                 st.link_button("🔗 قراءة الخبر كاملاً من المصدر الرسمي", entry.link)
                 st.divider()
         else:
-            st.warning("جاري جلب أحدث الأخبار الرياضية المباشرة...")
+            st.warning("جاري جلب أحدث الأخبار الرياضية...")
     else:
         st.warning("تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر.")
 
