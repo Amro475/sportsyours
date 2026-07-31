@@ -23,14 +23,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. أقسام ومصادر رياضية متخصصة ومحدثة تلقائياً
+# 2. مصادر أخبار رياضية دقيقة وخالصة
 SPORTS_FEEDS = {
     "⚽ كرة القدم المحلية والعالمية": {
-        "بي بي سي عربي - الرياضة": "https://feeds.bbci.co.uk/arabic/sport/rss.xml",
         "سكاي نيوز عربية - رياضة": "https://www.skynewsarabia.com/web/rss/sport",
-        "الجزيرة - قسم الرياضة": "https://www.aljazeera.net/aljazeerarss/a7c18667-7117-4a45-b02e-0a0d0e677763/sport.xml"
+        "الجزيرة - قسم الرياضة": "https://www.aljazeera.net/aljazeerarss/a7c18667-7117-4a45-b02e-0a0d0e677763/sport.xml",
+        "Sky Sports Football": "https://www.skysports.com/rss/12040"
     },
-    "🏎️ سباقات السرعة (فورمولا 1 ومحركات)": {
+    "🏎️ سباقات السرعة والمحركات": {
         "BBC Sport - Formula 1": "http://feeds.bbci.co.uk/sport/formula1/rss.xml"
     },
     "🎾 التنس والرياضات الفردية": {
@@ -81,9 +81,9 @@ st.title("⚽ المركز الرياضي الشامل - أخبار رياضية
 
 col_info, col_btn = st.columns([3, 1])
 with col_info:
-    st.write("تغطية حصرية، فورية ومحدثة تلقائياً لأحدث البطولات، المباريات، وأخبار الرياضة المحلية والعالمية.")
+    st.write("تغطية حصرية، فورية ومحدثة تلقائياً لأحدث البطولات والمباريات الرياضية.")
 with col_btn:
-    if st.button("🔄 تحديث الأخبار الآن"):
+    if st.button("🔄 تحديث الأخبار"):
         st.rerun()
 
 tab_news, tab_videos = st.tabs(["📰 الأخبار والمقالات الرياضية", "🎥 التغطيات المرئية والأهداف"])
@@ -104,8 +104,6 @@ with tab_news:
     feed = fetch_feed_data(feed_url)
 
     if feed and feed.entries:
-        st.success(f"تم جلب أحدث {len(feed.entries)} خبراً رياضياً بنجاح وتحديثها فورياً!")
-        
         for entry in feed.entries[:12]:
             st.subheader(entry.title)
             
@@ -125,7 +123,7 @@ with tab_news:
             st.link_button("🔗 قراءة الخبر كاملاً من المصدر الرسمي", entry.link)
             st.divider()
     else:
-        st.warning("جاري جلب أحدث الأخبار الرياضية... يرجى الضغط على زر (تحديث الأخبار الآن) في الأعلى.")
+        st.warning("جاري جلب أحدث الأخبار الرياضية... يرجى الضغط على زر التحديث في الأعلى.")
 
 with tab_videos:
     st.header("🎬 مقاطع الفيديو والأهداف الرياضية المباشرة")
