@@ -19,40 +19,56 @@ with st.sidebar:
     )
     st.divider()
 
-# ضبط النصوص حسب اللغة المختارة بدون تعديل CSS معقد يسبب تداخل
+# ضبط النصوص حسب اللغة المختارة
 if lang_option == "العربية":
     ui_title = "🌍 المنصة الإخبارية الشاملة"
     ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العربية والعالمية في كافة المجالات لحظة بلحظة."
-    ui_select_cat = "📌 اختر التصنيف الإخباري:"
     ui_select_source = "🌐 اختر الصحيفة أو المصدر:"
     ui_btn_refresh = "🔄 تحديث الأخبار"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الرسمي"
     ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر."
+    ui_prev_page = "◀️ الصفحة السابقة"
+    ui_next_page = "الصفحة التالية ▶️"
+    ui_page_text = "الصفحة"
+    categories = {
+        "⚽ الرياضة": "الرياضة",
+        "🏛️ السياسة": "السياسة",
+        "💻 التكنولوجيا": "التكنولوجيا",
+        "📈 الاقتصاد": "الاقتصاد"
+    }
 else:
     ui_title = "🌍 Global Comprehensive News Platform"
     ui_desc = "Instant and live coverage of the latest Arab and international news across all fields in real-time."
-    ui_select_cat = "📌 Select News Category:"
     ui_select_source = "🌐 Select Newspaper or Source:"
     ui_btn_refresh = "🔄 Refresh News"
     ui_read_more = "🔗 Read full story from official source"
     ui_error = "Could not fetch data from this source right now, please choose another source."
+    ui_prev_page = "◀️ Previous Page"
+    ui_next_page = "Next Page ▶️"
+    ui_page_text = "Page"
+    categories = {
+        "⚽ Sports": "Sports",
+        "🏛️ Politics": "Politics",
+        "💻 Technology": "Technology",
+        "📈 Economy": "Economy"
+    }
 
-# 3. جدول المصادر الإخبارية الشاملة (رياضة، سياسة، تكنولوجيا، اقتصاد)
+# 3. جدول المصادر الإخبارية الشاملة مرتبة حسب التصنيف
 NEWS_FEEDS = {
-    "⚽ الرياضة / Sports": {
+    "الرياضة": {
         "Sky Sports Football": "https://www.skysports.com/rss/12040",
         "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news",
         "BBC Sport - Football": "http://feeds.bbci.co.uk/sport/football/rss.xml"
     },
-    "🏛️ السياسة / Politics": {
+    "السياسة": {
         "بي بي سي عربي - الرئيسية": "https://feeds.bbci.co.uk/arabic/rss.xml",
         "رويترز - أخبار سياسية وعامة": "https://www.reutersagency.com/feed/?best-regions=middle-east&post_type=best"
     },
-    "💻 التكنولوجيا / Technology": {
+    "التكنولوجيا": {
         "تكنولوجيا المعلومات (BBC)": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
         "TechCrunch": "https://techcrunch.com/feed/"
     },
-    "📈 الاقتصاد والأعمال / Economy": {
+    "الاقتصاد": {
         "بي بي سي عربي - الاقتصاد": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
     }
 }
@@ -73,7 +89,7 @@ def fetch_feed_data(url):
     except Exception:
         return feedparser.parse(url)
 
-# 5. دالة استخراج الصور بدقة لتظهر بشكل جذاب ومريح للقارئ
+# 5. دالة استخراج الصور بدقة
 def extract_image_url(entry):
     if 'media_content' in entry and len(entry.media_content) > 0:
         return entry.media_content[0].get('url')
@@ -101,8 +117,18 @@ if st.button(ui_btn_refresh):
 
 st.divider()
 
-# القوائم المنفصلة بشكل مرتب وآمن
-selected_category = st.selectbox(ui_select_cat, list(NEWS_FEEDS.keys()))
+# اختيار نوع الخبر عبر الأزرار مباشرة (النقر على نوع الخبر نفسه)
+selected_tab_label = st.radio(
+    "",
+    options=list(categories.keys()),
+    horizontal=True
+)
+
+selected_category = categories[selected_tab_label]
+
+st.divider()
+
+# قائمة اختيار المصدر التابعة للقسم المحدد
 sources = NEWS_FEEDS[selected_category]
 selected_source_name = st.selectbox(ui_select_source, list(sources.keys()))
 
@@ -111,11 +137,45 @@ st.divider()
 
 st.subheader(f"📌 {selected_source_name}")
 
-# جلب الأخبار فوراً
+# جلب الأخبار وتطبيق نظام ترقيم الصفحات (Pagination)
 feed = fetch_feed_data(feed_url)
 
 if feed and feed.entries:
-    for entry in feed.entries[:15]:
+    entries = feed.entries
+    items_per_page = 5  # عدد الأخبار في كل صفحة
+    total_entries = len(entries)
+    total_pages = max(1, (total_entries + items_per_page - 1) // items_per_page)
+    
+    # إدارة حالة الصفحات
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = 1
+        
+    # إعادة ضبط الصفحة الحالية إذا تغير المصدر أو القسم
+    if 'last_source' not in st.session_state or st.session_state.last_source != selected_source_name:
+        st.session_state.current_page = 1
+        st.session_state.last_source = selected_source_name
+
+    # أزرار التنقل بين الصفحات بالأعلى
+    col_p1, col_p2, col_p3 = st.columns([1, 2, 1])
+    with col_p1:
+        if st.button(ui_prev_page) and st.session_state.current_page > 1:
+            st.session_state.current_page -= 1
+            st.rerun()
+    with col_p2:
+        st.markdown(f"<div style='text-align: center;'><b>{ui_page_text} {st.session_state.current_page} / {total_pages}</b></div>", unsafe_allow_html=True)
+    with col_p3:
+        if st.button(ui_next_page) and st.session_state.current_page < total_pages:
+            st.session_state.current_page += 1
+            st.rerun()
+
+    st.divider()
+
+    # تحديد الأخبار الخاصة بالصفحة الحالية
+    start_idx = (st.session_state.current_page - 1) * items_per_page
+    end_idx = start_idx + items_per_page
+    current_page_entries = entries[start_idx:end_idx]
+
+    for entry in current_page_entries:
         st.markdown(f"### {entry.title}")
         
         if hasattr(entry, 'published') and entry.published:
@@ -133,5 +193,18 @@ if feed and feed.entries:
             
         st.link_button(ui_read_more, entry.link)
         st.divider()
+        
+    # أزرار التنقل بالأسفل أيضاً لراحة القارئ
+    col_b1, col_b2, col_b3 = st.columns([1, 2, 1])
+    with col_b1:
+        if st.button(ui_prev_page + " ") and st.session_state.current_page > 1:
+            st.session_state.current_page -= 1
+            st.rerun()
+    with col_b2:
+        st.markdown(f"<div style='text-align: center;'><b>{ui_page_text} {st.session_state.current_page} / {total_pages}</b></div>", unsafe_allow_html=True)
+    with col_b3:
+        if st.button(ui_next_page + "  ") and st.session_state.current_page < total_pages:
+            st.session_state.current_page += 1
+            st.rerun()
 else:
     st.warning(ui_error)
