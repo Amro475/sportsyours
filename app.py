@@ -22,7 +22,7 @@ with st.sidebar:
 # ضبط النصوص حسب اللغة المختارة
 if lang_option == "العربية":
     ui_title = "🌍 المنصة الإخبارية الشاملة"
-    ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العربية والعالمية في كافة المجالات لحظة بلحظة."
+    ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العربية، المصرية، والعالمية في كافة المجالات لحظة بلحظة."
     ui_select_source = "🌐 اختر الصحيفة أو المصدر:"
     ui_btn_refresh = "🔄 تحديث الأخبار"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الرسمي"
@@ -38,7 +38,7 @@ if lang_option == "العربية":
     }
 else:
     ui_title = "🌍 Global Comprehensive News Platform"
-    ui_desc = "Instant and live coverage of the latest Arab and international news across all fields in real-time."
+    ui_desc = "Instant and live coverage of the latest Arab, Egyptian, and international news across all fields in real-time."
     ui_select_source = "🌐 Select Newspaper or Source:"
     ui_btn_refresh = "🔄 Refresh News"
     ui_read_more = "🔗 Read full story from official source"
@@ -53,14 +53,18 @@ else:
         "📈 Economy": "Economy"
     }
 
-# 3. جدول المصادر الإخبارية الشاملة مرتبة حسب التصنيف
+# 3. جدول المصادر الإخبارية الشاملة متضمنة الصحف المصرية والعربية والعالمية
 NEWS_FEEDS = {
     "الرياضة": {
+        "يلا كورة (مصر - رياضة)": "https://www.yallakora.com/rss/news",
+        "بطولات (عربي - رياضة)": "https://www.btolat.com/rss/news",
         "Sky Sports Football": "https://www.skysports.com/rss/12040",
-        "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news",
-        "BBC Sport - Football": "http://feeds.bbci.co.uk/sport/football/rss.xml"
+        "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news"
     },
     "السياسة": {
+        "اليوم السابع (مصر)": "https://www.youm7.com/rss/SectionRss?SecID=287",
+        "بوابة الأهرام (مصر)": "https://gate.ahram.org.eg/RSS/1/0.aspx",
+        "الجزيرة نت (عربي / سياسة)": "https://www.aljazeera.net/rss",
         "بي بي سي عربي - الرئيسية": "https://feeds.bbci.co.uk/arabic/rss.xml",
         "رويترز - أخبار سياسية وعامة": "https://www.reutersagency.com/feed/?best-regions=middle-east&post_type=best"
     },
@@ -117,7 +121,7 @@ if st.button(ui_btn_refresh):
 
 st.divider()
 
-# اختيار نوع الخبر عبر الأزرار مباشرة (النقر على نوع الخبر نفسه)
+# اختيار نوع الخبر عبر الأزرار المباشرة
 selected_tab_label = st.radio(
     "",
     options=list(categories.keys()),
@@ -150,7 +154,6 @@ if feed and feed.entries:
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 1
         
-    # إعادة ضبط الصفحة الحالية إذا تغير المصدر أو القسم
     if 'last_source' not in st.session_state or st.session_state.last_source != selected_source_name:
         st.session_state.current_page = 1
         st.session_state.last_source = selected_source_name
@@ -170,7 +173,6 @@ if feed and feed.entries:
 
     st.divider()
 
-    # تحديد الأخبار الخاصة بالصفحة الحالية
     start_idx = (st.session_state.current_page - 1) * items_per_page
     end_idx = start_idx + items_per_page
     current_page_entries = entries[start_idx:end_idx]
@@ -194,7 +196,7 @@ if feed and feed.entries:
         st.link_button(ui_read_more, entry.link)
         st.divider()
         
-    # أزرار التنقل بالأسفل أيضاً لراحة القارئ
+    # أزرار التنقل بالأسفل
     col_b1, col_b2, col_b3 = st.columns([1, 2, 1])
     with col_b1:
         if st.button(ui_prev_page + " ") and st.session_state.current_page > 1:
