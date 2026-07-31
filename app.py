@@ -23,9 +23,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. مصادر رياضية متخصصة وخالصة 100% (بدون أي سياسة)
+# 2. مصادر رياضية عربية وعالمية خالصة 100%
 SPORTS_FEEDS = {
-    "⚽ الصحف والشبكات الرياضية - كرة القدم": {
+    "⚽ الصحف والشبكات الرياضية (عربي وعالمي)": {
+        "يلا كورة - أخبار كرة القدم": "https://www.yallakora.com/rss/news",
+        "beIN Sports - أحدث الأخبار": "https://www.beinsports.com/ar/rss",
         "Sky Sports Football (إنجليزي)": "https://www.skysports.com/rss/12040",
         "BBC Sport - Football (إنجليزي)": "http://feeds.bbci.co.uk/sport/football/rss.xml",
         "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news"
@@ -42,11 +44,11 @@ SPORTS_FEEDS = {
     }
 }
 
-# 3. دالة جلب الأخبار وتجاوز الحظر
+# 3. دالة جلب الأخبار لحظياً وتجاوز الحظر
 def fetch_feed_data(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache'
     }
     try:
@@ -58,7 +60,16 @@ def fetch_feed_data(url):
     except Exception:
         return feedparser.parse(url)
 
-# 4. دالة استخراج الصور بدقة
+# 4. فلتر ذكي لمنع أي كلمات سياسية نهائياً وضمان الرياضة فقط
+def is_sports_news(title, summary):
+    forbidden_words = ["حماس", "سياسة", "حكومة", "انتخابات", "فلسطين", "غزة", "جيش", "رئيس", "وزير", "برلمان", "عسكري", "انفجار"]
+    text = (title + " " + summary).lower()
+    for word in forbidden_words:
+        if word in text:
+            return False
+    return True
+
+# 5. دالة استخراج الصور بدقة
 def extract_image_url(entry):
     if 'media_content' in entry and len(entry.media_content) > 0:
         return entry.media_content[0].get('url')
@@ -77,22 +88,22 @@ def extract_image_url(entry):
         
     return None
 
-# 5. واجهة التطبيق
-st.title("⚽ المركز الرياضي الشامل - أخبار رياضية فقط")
+# 6. واجهة التطبيق
+st.title("⚽ المركز الرياضي الشامل - صحف عربية وعالمية")
 
 col_info, col_btn = st.columns([3, 1])
 with col_info:
-    st.write("تغطية رياضية خالصة 100% لأبرز البطولات، الدوريات، والمنافسات العالمية.")
+    st.write("تغطية رياضية فورية ومحدثة لحظة بلحظة من الصحف العربية والعالمية الحصرية.")
 with col_btn:
-    if st.button("🔄 تحديث الأخبار"):
+    if st.button("🔄 تحديث الأخبار الآن"):
         st.rerun()
 
-tab_news, tab_videos = st.tabs(["📰 الأخبار والمقالات الرياضية", "🎥 التغطيات المرئية والأهداف"])
+tab_news, tab_videos = st.tabs(["📰 الأخبار الرياضية (عربي وعالمي)", "🎥 التغطيات المرئية والأهداف"])
 
 with tab_news:
     col1, col2 = st.columns(2)
     with col1:
-        selected_category = st.selectbox("📌 اختر القسم:", list(SPORTS_FEEDS.keys()))
+        selected_category = st.selectbox("📌 اختر القسم الرياضي:", list(SPORTS_FEEDS.keys()))
     with col2:
         sources = SPORTS_FEEDS[selected_category]
         selected_source_name = st.selectbox("🌐 اختر الصحيفة أو المصدر:", list(sources.keys()))
@@ -105,26 +116,35 @@ with tab_news:
     feed = fetch_feed_data(feed_url)
 
     if feed and feed.entries:
-        for entry in feed.entries[:12]:
-            st.subheader(entry.title)
-            
-            if hasattr(entry, 'published'):
-                st.caption(f"🕒 وقت النشر: {entry.published}")
-            
-            img_url = extract_image_url(entry)
-            if img_url:
-                st.image(img_url, use_column_width=True)
+        # فلترة الأخبار لعرض الرياضية فقط واستبعاد أي شوائب سياسية
+        filtered_entries = [
+            entry for entry in feed.entries 
+            if is_sports_news(entry.title, getattr(entry, 'summary', ''))
+        ]
+        
+        if filtered_entries:
+            for entry in filtered_entries[:12]:
+                st.subheader(entry.title)
                 
-            summary_html = getattr(entry, 'summary', '')
-            clean_text = BeautifulSoup(summary_html, "html.parser").get_text().strip()
-            
-            if clean_text:
-                st.write(clean_text)
+                if hasattr(entry, 'published'):
+                    st.caption(f"🕒 وقت النشر: {entry.published}")
                 
-            st.link_button("🔗 قراءة الخبر كاملاً من المصدر الرسمي", entry.link)
-            st.divider()
+                img_url = extract_image_url(entry)
+                if img_url:
+                    st.image(img_url, use_column_width=True)
+                    
+                summary_html = getattr(entry, 'summary', '')
+                clean_text = BeautifulSoup(summary_html, "html.parser").get_text().strip()
+                
+                if clean_text:
+                    st.write(clean_text)
+                    
+                st.link_button("🔗 قراءة الخبر كاملاً من المصدر الرسمي", entry.link)
+                st.divider()
+        else:
+            st.warning("جاري جلب أحدث الأخبار الرياضية المباشرة...")
     else:
-        st.warning("جاري جلب الأخبار الرياضية... يرجى الضغط على زر التحديث في الأعلى.")
+        st.warning("تعذر جلب البيانات من هذا المصدر حالياً، يرجى الضغط على زر التحديث أو اختيار مصدر آخر.")
 
 with tab_videos:
     st.header("🎬 مقاطع الفيديو والأهداف الرياضية المباشرة")
