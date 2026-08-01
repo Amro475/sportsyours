@@ -113,31 +113,44 @@ def fetch_feed_data(url):
         pass
     return feedparser.parse(url)
 
-# 5. دالة استخراج الصور عالية الجودة
-def extract_high_res_image(entry):
-    if 'enclosures' in entry:
-        for enc in entry.enclosures:
-            if enc.get('type', '').startswith('image/'):
-                return enc.get('href')
-                
+# 5. دالة متطورة لاستخراج وتحسين دقة الصور (HD Quality)
+def extract_hd_image(entry):
+    raw_url = None
+    
+    # 1. البحث في الوسائط عالية الجودة
     if 'media_content' in entry and len(entry.media_content) > 0:
         for media in entry.media_content:
             if 'url' in media:
-                return media['url']
+                raw_url = media['url']
+                break
 
-    if 'links' in entry:
+    if not raw_url and 'enclosures' in entry:
+        for enc in entry.enclosures:
+            if enc.get('type', '').startswith('image/'):
+                raw_url = enc.get('href')
+                break
+
+    if not raw_url and 'links' in entry:
         for link in entry.links:
             if link.get('type', '').startswith('image/'):
-                return link.get('href')
+                raw_url = link.get('href')
+                break
 
-    content_to_search = getattr(entry, 'summary', '') + getattr(entry, 'content', [{'value': ''}])[0]['value']
-    soup = BeautifulSoup(content_to_search, 'html.parser')
-    img_tag = soup.find('img')
-    if img_tag and img_tag.get('src'):
-        src = img_tag['src']
-        clean_src = src.split('?')[0] if 'http' in src else src
-        return clean_src
-        
+    if not raw_url:
+        content_to_search = getattr(entry, 'summary', '') + getattr(entry, 'content', [{'value': ''}])[0]['value']
+        soup = BeautifulSoup(content_to_search, 'html.parser')
+        img_tag = soup.find('img')
+        if img_tag and img_tag.get('src'):
+            raw_url = img_tag['src']
+
+    # 2. تحسين أبعاد الرابط واستبدال الصور المصغرة بالصور عالية الجودة (HD)
+    if raw_url:
+        # إزالة علامات تقليل الجودة والتحجيم من الروابط
+        clean_url = raw_url.split('?')[0]
+        # معالجة روابط سكاي نيوز والمواقع المشابهة لتحويل المصغرات إلى جودة عالية
+        clean_url = clean_url.replace('/thumb/', '/v/').replace('_thumb', '').replace('_150x150', '_800x600')
+        return clean_url
+
     return None
 
 # دالة الترجمة
@@ -151,17 +164,15 @@ def translate_text(text, target_lang):
     except Exception:
         return text
 
-# دالة الترقيم المنسقة النظيفة بمرونة عالية
+# دالة الترقيم المنسقة النظيفة
 def render_clean_pagination(total_pages, key_prefix):
     col_prev, col_select, col_next = st.columns([1, 2, 1])
     
-    # زر الصفحة السابقة
     with col_prev:
         if st.button(ui_prev_btn, key=f"{key_prefix}_prev", disabled=(st.session_state.current_page == 1), use_container_width=True):
             st.session_state.current_page -= 1
             st.rerun()
             
-    # اختيار رقم الصفحة من قائمة منسدلة أنيقة
     with col_select:
         page_options = list(range(1, total_pages + 1))
         selected_p = st.selectbox(
@@ -175,7 +186,6 @@ def render_clean_pagination(total_pages, key_prefix):
             st.session_state.current_page = selected_p
             st.rerun()
             
-    # زر الصفحة التالية
     with col_next:
         if st.button(ui_next_btn, key=f"{key_prefix}_next", disabled=(st.session_state.current_page == total_pages), use_container_width=True):
             st.session_state.current_page += 1
@@ -224,11 +234,9 @@ if feed and feed.entries:
         st.session_state.current_page = 1
         st.session_state.last_source = selected_source_name
 
-    # ضمان عدم تجاوز حدود الصفحات
     if st.session_state.current_page > total_pages:
         st.session_state.current_page = 1
 
-    # شريط التنقل العلوي
     render_clean_pagination(total_pages, "top_p")
     st.divider()
 
@@ -243,9 +251,12 @@ if feed and feed.entries:
         if hasattr(entry, 'published') and entry.published:
             st.caption(f"🕒 {entry.published}")
         
-        img_url = extract_high_res_image(entry)
+        # عرض الصور عالية الدقة مع تحكّم ممتازة بالشكل والأبعاد
+        img_url = extract_hd_image(entry)
         if img_url:
-            st.image(img_url, use_container_width=True)
+            col_img, _ = st.columns([3, 1])
+            with col_img:
+                st.image(img_url, use_container_width=True)
             
         summary_html = getattr(entry, 'summary', '')
         clean_text = BeautifulSoup(summary_html, "html.parser").get_text().strip()
@@ -257,7 +268,6 @@ if feed and feed.entries:
         st.link_button(ui_read_more, entry.link)
         st.divider()
         
-    # شريط التنقل السفلي
     render_clean_pagination(total_pages, "bottom_p")
 else:
     st.warning(ui_error)
