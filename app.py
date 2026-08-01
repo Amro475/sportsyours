@@ -28,7 +28,6 @@ if lang_option == "العربية":
     ui_btn_refresh = "🔄 تحديث الأخبار"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الرسمي"
     ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر."
-    ui_page_label = "📍 اختر الصفحة:"
     ui_prev_btn = "◀ الصفحة السابقة"
     ui_next_btn = "الصفحة التالية ▶"
     
@@ -65,7 +64,6 @@ else:
     ui_btn_refresh = "🔄 Refresh News"
     ui_read_more = "🔗 Read Full Story from Official Source"
     ui_error = "Could not fetch data from this source right now, please select another source."
-    ui_page_label = "📍 Select Page:"
     ui_prev_btn = "◀ Previous Page"
     ui_next_btn = "Next Page ▶"
     
@@ -111,7 +109,7 @@ def fetch_feed_data(url):
         pass
     return feedparser.parse(url)
 
-# 5. دالة جلب الصورة الأصلية عالية الدقة (og:image) من رابط الخبر مباشرة مع الكاش لسرعة الأداء
+# 5. دالة جلب الصورة الأصلية عالية الدقة
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_og_image_from_link(article_url):
     try:
@@ -119,7 +117,6 @@ def fetch_og_image_from_link(article_url):
         resp = requests.get(article_url, headers=headers, timeout=4)
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.content, 'html.parser')
-            # البحث عن صورة og:image أو twitter:image عالية الجودة
             og_tag = (soup.find('meta', property='og:image') or 
                       soup.find('meta', attrs={'name': 'og:image'}) or 
                       soup.find('meta', property='twitter:image'))
@@ -129,15 +126,12 @@ def fetch_og_image_from_link(article_url):
         pass
     return None
 
-# دالة استخراج وتدقيق الصورة لضمان أقصى وضوح HD
 def extract_hd_image(entry):
-    # 1. تجربة جلب الصورة عالية الدقة مباشرة من المقال الأصلي
     if hasattr(entry, 'link') and entry.link:
         og_img = fetch_og_image_from_link(entry.link)
         if og_img:
             return og_img
 
-    # 2. في حال تعذر ذلك، استخراج الصورة المتاحة في الـ RSS وتعديل الرابط للجودة العالية
     raw_url = None
     if 'media_content' in entry and len(entry.media_content) > 0:
         for media in entry.media_content:
@@ -175,27 +169,17 @@ def translate_text(text, target_lang):
     except Exception:
         return text
 
-# دالة الترقيم المنسقة والنظيفة
+# دالة الترقيم المبسطة (بدون قائمة منسدلة)
 def render_clean_pagination(total_pages, key_prefix):
-    col_prev, col_select, col_next = st.columns([1, 2, 1])
+    col_prev, col_info, col_next = st.columns([1, 1, 1])
     
     with col_prev:
         if st.button(ui_prev_btn, key=f"{key_prefix}_prev", disabled=(st.session_state.current_page == 1), use_container_width=True):
             st.session_state.current_page -= 1
             st.rerun()
             
-    with col_select:
-        page_options = list(range(1, total_pages + 1))
-        selected_p = st.selectbox(
-            ui_page_label,
-            options=page_options,
-            index=st.session_state.current_page - 1,
-            key=f"{key_prefix}_select",
-            label_visibility="collapsed"
-        )
-        if selected_p != st.session_state.current_page:
-            st.session_state.current_page = selected_p
-            st.rerun()
+    with col_info:
+        st.markdown(f"<p style='text-align: center; margin-top: 8px; font-weight: bold;'>{st.session_state.current_page} / {total_pages}</p>", unsafe_allow_html=True)
             
     with col_next:
         if st.button(ui_next_btn, key=f"{key_prefix}_next", disabled=(st.session_state.current_page == total_pages), use_container_width=True):
@@ -262,7 +246,6 @@ if feed and feed.entries:
         if hasattr(entry, 'published') and entry.published:
             st.caption(f"🕒 {entry.published}")
         
-        # استخراج وعرض الصورة بجودة HD الأصلية
         img_url = extract_hd_image(entry)
         if img_url:
             col_img, _ = st.columns([3, 1])
