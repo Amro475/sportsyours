@@ -10,9 +10,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# 2. القائمة الجانبية لإعدادات القارئ (اللغة)
+# 2. القائمة الجانبية لإعدادات (اللغة)
 with st.sidebar:
-    st.markdown("### ⚙️ إعدادات القارئ")
+    st.markdown("### ⚙️ إعدادات")
     lang_option = st.selectbox(
         "اختر اللغة / Language",
         ["العربية", "English"]
