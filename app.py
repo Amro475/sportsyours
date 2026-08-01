@@ -35,7 +35,8 @@ if lang_option == "العربية":
         "⚽ الرياضة": "الرياضة",
         "🏛️ السياسة": "السياسة",
         "💻 التكنولوجيا": "التكنولوجيا",
-        "📈 الاقتصاد": "الاقتصاد"
+        "📈 الاقتصاد": "الاقتصاد",
+        "🎨 الفنون": "الفنون"
     }
     
     NEWS_FEEDS = {
@@ -55,6 +56,11 @@ if lang_option == "العربية":
         },
         "الاقتصاد": {
             "اقتصاد (BBC عربي)": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
+        },
+        "الفنون": {
+            "فرانس 24 - ثقافة وفنون": "https://www.france24.com/ar/%D8%AB%D9%82%D8%A7%D9%81%D8%A9/rss",
+            "بي بي سي عربي - ثقافة وفنون": "http://feeds.bbci.co.uk/arabic/artandculture/rss.xml",
+            "الجزيرة - ثقافة": "https://www.aljazeera.net/rss/culture"
         }
     }
 else:
@@ -71,7 +77,8 @@ else:
         "⚽ Sports": "الرياضة",
         "🏛️ Politics": "السياسة",
         "💻 Technology": "التكنولوجيا",
-        "📈 Economy": "الاقتصاد"
+        "📈 Economy": "الاقتصاد",
+        "🎨 Arts & Culture": "الفنون"
     }
     
     NEWS_FEEDS = {
@@ -91,6 +98,11 @@ else:
         },
         "الاقتصاد": {
             "BBC Economy": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
+        },
+        "الفنون": {
+            "France 24 - Culture": "https://www.france24.com/en/culture/rss",
+            "BBC Entertainment & Arts": "http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
+            "ARTnews": "https://www.artnews.com/feed/"
         }
     }
 
@@ -169,7 +181,7 @@ def translate_text(text, target_lang):
     except Exception:
         return text
 
-# دالة الترقيم المبسطة (بدون قائمة منسدلة)
+# دالة الترقيم المبسطة
 def render_clean_pagination(total_pages, key_prefix):
     col_prev, col_info, col_next = st.columns([1, 1, 1])
     
@@ -195,7 +207,7 @@ if st.button(ui_btn_refresh):
 
 st.divider()
 
-# اختيار نوع الخبر
+# اختيار نوع الخبر (الأقسام في الأعلى)
 tab_names = list(categories.keys())
 selected_tab = st.segmented_control("", tab_names, default=tab_names[0])
 
