@@ -3,6 +3,7 @@ import feedparser
 import requests
 from bs4 import BeautifulSoup
 from deep_translator import GoogleTranslator
+from io import BytesIO
 
 # 1. إعدادات الصفحة والواجهة
 st.set_page_config(
@@ -22,8 +23,8 @@ with st.sidebar:
 
 # عند اختيار اللغة العربية: نعرض الصحف العالمية/الأجنبية مع ترجمة محتواها للعربية
 if lang_option == "العربية":
-    ui_title = "🌍 المنصة الإخبارية العالمية"
-    ui_desc = "تغطية فورية لأحدث الأخبار من الصحف والمصادر العربية والعالمية."
+    ui_title = "🌍 المنصة الإخبارية العالمية (مترجمة للعربية)"
+    ui_desc = "تغطية فورية لأحدث الأخبار من الصحف والمصادر الأجنبية والعالمية مترجمة كلياً إلى اللغة العربية."
     ui_select_source = "🌐 اختر المصدر الأجنبي:"
     ui_btn_refresh = "🔄 تحديث الأخبار"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الأصلي"
@@ -39,7 +40,6 @@ if lang_option == "العربية":
         "🎨 الفنون": "Arts"
     }
     
-    # مصادر أجنبية تُرجم للعربية
     NEWS_FEEDS = {
         "Sports": {
             "بي بي سي سبورت (BBC Sport)": "http://feeds.bbci.co.uk/sport/football/rss.xml",
@@ -58,7 +58,7 @@ if lang_option == "العربية":
         },
         "Economy": {
             "فاينانشال تايمز (Financial Times)": "https://www.ft.com/?format=rss",
-            "بلومبرغ / بي بي سي اقتصاد (BBC Business)": "http://feeds.bbci.co.uk/news/business/rss.xml",
+            "بي بي سي اقتصاد (BBC Business)": "http://feeds.bbci.co.uk/news/business/rss.xml",
             "سي إن بي سي (CNBC)": "https://www.cnbc.com/id/100003114/device/rss/rss.html"
         },
         "Arts": {
@@ -68,7 +68,6 @@ if lang_option == "العربية":
         }
     }
 
-# عند اختيار اللغة الإنجليزية: نعرض الصحف العربية مع ترجمة محتواها للإنجليزية
 else:
     ui_title = "🌍 Arab News Platform (Translated to English)"
     ui_desc = "Live instant coverage of top Arab newspapers and sources translated into English."
@@ -87,12 +86,10 @@ else:
         "🎨 Arts & Culture": "Arts"
     }
     
-    # مصادر عربية تُترجم للإنجليزية
     NEWS_FEEDS = {
         "Sports": {
             "Sky News Arabia - Sports": "https://www.skynewsarabia.com/rss/sport.xml",
-            "France 24 Arabic - Sports": "https://www.france24.com/ar/%D8%B1%D9%8A%D8%A7%D8%B6%D8%A9/rss",
-            "Kooora News": "https://www.kooora.com/default.aspx?showrss=news"
+            "France 24 Arabic - Sports": "https://www.france24.com/ar/%D8%B1%D9%8A%D8%A7%D8%B6%D8%A9/rss"
         },
         "Politics": {
             "Al Jazeera Arabic": "https://www.aljazeera.net/rss",
@@ -101,16 +98,14 @@ else:
         },
         "Technology": {
             "BBC Arabic - Tech": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
-            "AITNews (Aitnews Arab Tech)": "https://aitnews.com/feed/"
+            "AITNews (Arab Tech)": "https://aitnews.com/feed/"
         },
         "Economy": {
-            "BBC Arabic - Business": "http://feeds.bbci.co.uk/arabic/business/rss.xml",
-            "Al Arabiya Business": "https://www.alarabiya.net/aswaq.xml"
+            "BBC Arabic - Business": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
         },
         "Arts": {
             "France 24 Arabic - Culture": "https://www.france24.com/ar/%D8%AB%D9%82%D8%A7%D9%81%D8%A9/rss",
-            "BBC Arabic - Arts & Culture": "http://feeds.bbci.co.uk/arabic/artandculture/rss.xml",
-            "Al Jazeera Culture": "https://www.aljazeera.net/rss/culture"
+            "BBC Arabic - Arts & Culture": "http://feeds.bbci.co.uk/arabic/artandculture/rss.xml"
         }
     }
 
@@ -129,7 +124,7 @@ def fetch_feed_data(url):
         pass
     return feedparser.parse(url)
 
-# 5. دالة جلب الصورة الأصلية عالية الدقة
+# 5. دالة استخراج رابط الصورة
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_og_image_from_link(article_url):
     try:
@@ -146,39 +141,51 @@ def fetch_og_image_from_link(article_url):
         pass
     return None
 
-def extract_hd_image(entry):
+def extract_image_url(entry):
+    # 1. البحث بداخل وسائل الإعلام المرفقة media:content
+    if 'media_content' in entry and len(entry.media_content) > 0:
+        for media in entry.media_content:
+            if 'url' in media:
+                return media['url']
+
+    # 2. البحث بداخل المرفقات enclosures
+    if 'enclosures' in entry:
+        for enc in entry.enclosures:
+            if enc.get('type', '').startswith('image/'):
+                return enc.get('href')
+
+    # 3. جلب الصورة عالية الدقة من المقال الأصلي مباشرة
     if hasattr(entry, 'link') and entry.link:
         og_img = fetch_og_image_from_link(entry.link)
         if og_img:
             return og_img
 
-    raw_url = None
-    if 'media_content' in entry and len(entry.media_content) > 0:
-        for media in entry.media_content:
-            if 'url' in media:
-                raw_url = media['url']
-                break
-
-    if not raw_url and 'enclosures' in entry:
-        for enc in entry.enclosures:
-            if enc.get('type', '').startswith('image/'):
-                raw_url = enc.get('href')
-                break
-
-    if not raw_url:
-        content_to_search = getattr(entry, 'summary', '') + getattr(entry, 'content', [{'value': ''}])[0]['value']
-        soup = BeautifulSoup(content_to_search, 'html.parser')
-        img_tag = soup.find('img')
-        if img_tag and img_tag.get('src'):
-            raw_url = img_tag['src']
-
-    if raw_url:
-        clean_url = raw_url.split('?')[0]
-        return clean_url
+    # 4. استخراج الصورة من نص الملخص HTML
+    content_to_search = getattr(entry, 'summary', '') + getattr(entry, 'content', [{'value': ''}])[0]['value']
+    soup = BeautifulSoup(content_to_search, 'html.parser')
+    img_tag = soup.find('img')
+    if img_tag and img_tag.get('src'):
+        return img_tag['src']
 
     return None
 
-# دالة الترجمة التلقائية الكاش لمنع التكرار
+# دالة لعرض الصورة بأمان وضمان عدم حظر السيرفرات لها
+def display_safe_image(img_url):
+    try:
+        # المحاولة الأولى: التمرير المباشر
+        st.image(img_url, use_container_width=True)
+    except Exception:
+        try:
+            # المحاولة الثانية: جلب الصورة بالـ Request مع User-Agent لتفادي حجب السيرفر
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+            response = requests.get(img_url, headers=headers, timeout=5)
+            if response.status_code == 200:
+                image_bytes = BytesIO(response.content)
+                st.image(image_bytes, use_container_width=True)
+        except Exception:
+            pass
+
+# دالة الترجمة التلقائية الكاش
 @st.cache_data(ttl=86400, show_spinner=False)
 def translate_text(text, target_lang):
     if not text or not text.strip():
@@ -267,11 +274,12 @@ if feed and feed.entries:
         if hasattr(entry, 'published') and entry.published:
             st.caption(f"🕒 {entry.published}")
         
-        img_url = extract_hd_image(entry)
+        # استخراج وعرض الصورة بأمان
+        img_url = extract_image_url(entry)
         if img_url:
             col_img, _ = st.columns([3, 1])
             with col_img:
-                st.image(img_url, use_container_width=True)
+                display_safe_image(img_url)
             
         summary_html = getattr(entry, 'summary', '')
         clean_text = BeautifulSoup(summary_html, "html.parser").get_text().strip()
