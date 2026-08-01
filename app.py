@@ -2,6 +2,10 @@ import streamlit as st
 import feedparser
 import requests
 from bs4 import BeautifulSoup
+from googletrans import Translator
+
+# إعداد مترجم جوجل
+translator = Translator()
 
 # 1. إعدادات الصفحة والواجهة
 st.set_page_config(
@@ -19,7 +23,7 @@ with st.sidebar:
     )
     st.divider()
 
-# ضبط جميع نصوص الواجهة والأقسام والمصادر بناءً على اللغة المختارة
+# ضبط جميع نصوص الواجهة والأقسام بناءً على اللغة
 if lang_option == "العربية":
     ui_title = "🌍 المنصة الإخبارية الشاملة"
     ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العربية والعالمية في كافة المجالات لحظة بلحظة."
@@ -38,22 +42,20 @@ if lang_option == "العربية":
     
     NEWS_FEEDS = {
         "الرياضة": {
-            "بي بي سي سبورت - كرة القدم": "http://feeds.bbci.co.uk/sport/football/rss.xml",
-            "بطولات (عربي - رياضة)": "https://www.btolat.com/rss/news",
-            "سكاي سبورتس - كرة القدم": "https://www.skysports.com/rss/12040",
-            "جول دوت كوم - أخبار كرة القدم": "https://www.goal.com/feeds/en/news"
+            "بطولات (عربي)": "https://www.btolat.com/rss/news",
+            "بي بي سي سبورت": "http://feeds.bbci.co.uk/sport/football/rss.xml",
+            "سكاي سبورتس": "https://www.skysports.com/rss/12040"
         },
         "السياسة": {
-            "الجزيرة نت - أخبار سياسية": "https://www.aljazeera.net/rss",
-            "بي بي سي عربي - الرئيسية": "https://feeds.bbci.co.uk/arabic/rss.xml",
-            "رويترز - أخبار سياسية وعامة": "https://www.reutersagency.com/feed/?best-regions=middle-east&post_type=best"
+            "الجزيرة نت": "https://www.aljazeera.net/rss",
+            "بي بي سي عربي": "https://feeds.bbci.co.uk/arabic/rss.xml"
         },
         "التكنولوجيا": {
-            "تكنولوجيا المعلومات (BBC عربي)": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
-            "تك كرانش - أخبار التكنولوجيا": "https://techcrunch.com/feed/"
+            "تكنولوجيا (BBC عربي)": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
+            "تك كرانش": "https://techcrunch.com/feed/"
         },
         "الاقتصاد": {
-            "بي بي سي عربي - الاقتصاد": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
+            "اقتصاد (BBC عربي)": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
         }
     }
 else:
@@ -74,22 +76,20 @@ else:
     
     NEWS_FEEDS = {
         "الرياضة": {
-            "BBC Sport - Football": "http://feeds.bbci.co.uk/sport/football/rss.xml",
-            "Btolat - Arab Sports": "https://www.btolat.com/rss/news",
+            "BBC Sport Football": "http://feeds.bbci.co.uk/sport/football/rss.xml",
             "Sky Sports Football": "https://www.skysports.com/rss/12040",
-            "Goal.com - Football News": "https://www.goal.com/feeds/en/news"
+            "Btolat Sports": "https://www.btolat.com/rss/news"
         },
         "السياسة": {
-            "Al Jazeera Net - Politics": "https://www.aljazeera.net/rss",
-            "BBC Arabic - Home": "https://feeds.bbci.co.uk/arabic/rss.xml",
-            "Reuters - Political & General News": "https://www.reutersagency.com/feed/?best-regions=middle-east&post_type=best"
+            "Al Jazeera Net": "https://www.aljazeera.net/rss",
+            "BBC Arabic News": "https://feeds.bbci.co.uk/arabic/rss.xml"
         },
         "التكنولوجيا": {
-            "BBC Arabic - Tech": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
-            "TechCrunch - Tech News": "https://techcrunch.com/feed/"
+            "BBC Tech News": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
+            "TechCrunch": "https://techcrunch.com/feed/"
         },
         "الاقتصاد": {
-            "BBC Arabic - Business": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
+            "BBC Economy": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
         }
     }
 
@@ -126,6 +126,17 @@ def extract_image_url(entry):
         
     return None
 
+# دالة لترجمة المحتوى تلقائياً
+def translate_text(text, target_lang):
+    if not text:
+        return ""
+    try:
+        dest = 'ar' if target_lang == "العربية" else 'en'
+        translated = translator.translate(text, dest=dest)
+        return translated.text
+    except Exception:
+        return text  # في حال تعذر الترجمة يتم إرجاع النص كما هو
+
 # 6. واجهة العرض الرئيسية
 st.title(ui_title)
 st.write(ui_desc)
@@ -139,7 +150,6 @@ st.divider()
 tab_names = list(categories.keys())
 selected_tab = st.segmented_control("", tab_names, default=tab_names[0])
 
-# في حال عدم التحديد يتم التخلف إلى الخيار الأول
 if not selected_tab:
     selected_tab = tab_names[0]
 
@@ -147,7 +157,6 @@ selected_category = categories[selected_tab]
 
 st.divider()
 
-# قائمة اختيار المصدر التابعة للقسم المحدد
 sources = NEWS_FEEDS[selected_category]
 selected_source_name = st.selectbox(ui_select_source, list(sources.keys()))
 
@@ -156,16 +165,14 @@ st.divider()
 
 st.subheader(f"📌 {selected_source_name}")
 
-# جلب الأخبار وتطبيق نظام أرقام الصفحات Direct Number Pagination
 feed = fetch_feed_data(feed_url)
 
 if feed and feed.entries:
     entries = feed.entries
-    items_per_page = 5  # عدد الأخبار في كل صفحة
+    items_per_page = 5
     total_entries = len(entries)
     total_pages = max(1, (total_entries + items_per_page - 1) // items_per_page)
     
-    # إدارة حالة الصفحة الحالية
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 1
         
@@ -173,7 +180,7 @@ if feed and feed.entries:
         st.session_state.current_page = 1
         st.session_state.last_source = selected_source_name
 
-    # عرض ترقيم الصفحات بأزرار رقمية مباشرة (1, 2, 3...)
+    # أزرار الترقيم الرقمية في الأعلى
     st.write(f"**{ui_page_label}**")
     page_cols = st.columns(total_pages)
     for p in range(1, total_pages + 1):
@@ -184,13 +191,14 @@ if feed and feed.entries:
 
     st.divider()
 
-    # جلب أخبار الصفحة المختارة
     start_idx = (st.session_state.current_page - 1) * items_per_page
     end_idx = start_idx + items_per_page
     current_page_entries = entries[start_idx:end_idx]
 
     for entry in current_page_entries:
-        st.markdown(f"### {entry.title}")
+        # ترجمة العنوان والملخص بناءً على اللغة المختارة
+        translated_title = translate_text(entry.title, lang_option)
+        st.markdown(f"### {translated_title}")
         
         if hasattr(entry, 'published') and entry.published:
             st.caption(f"🕒 {entry.published}")
@@ -203,12 +211,13 @@ if feed and feed.entries:
         clean_text = BeautifulSoup(summary_html, "html.parser").get_text().strip()
         
         if clean_text:
-            st.write(clean_text)
+            translated_summary = translate_text(clean_text, lang_option)
+            st.write(translated_summary)
             
         st.link_button(ui_read_more, entry.link)
         st.divider()
         
-    # عرض أزرار الترقيم الرقمية في أسفل الصفحة أيضاً
+    # أزرار الترقيم الرقمية في الأسفل
     st.write(f"**{ui_page_label}**")
     bottom_page_cols = st.columns(total_pages)
     for p in range(1, total_pages + 1):
