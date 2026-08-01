@@ -12,7 +12,7 @@ st.set_page_config(
 
 # 2. القائمة الجانبية لإعدادات القارئ (اللغة)
 with st.sidebar:
-    st.markdown("### ⚙️ إعدادات")
+    st.markdown("### ⚙️ إعدادات القارئ")
     lang_option = st.selectbox(
         "اختر اللغة / Language",
         ["العربية", "English"]
@@ -22,14 +22,12 @@ with st.sidebar:
 # ضبط النصوص حسب اللغة المختارة
 if lang_option == "العربية":
     ui_title = "🌍 المنصة الإخبارية الشاملة"
-    ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العربية، المصرية، والعالمية في كافة المجالات لحظة بلحظة."
+    ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العربية والعالمية في كافة المجالات لحظة بلحظة."
     ui_select_source = "🌐 اختر الصحيفة أو المصدر:"
     ui_btn_refresh = "🔄 تحديث الأخبار"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الرسمي"
-    ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر (مثل بي بي سي أو الجزيرة)."
-    ui_prev_page = "◀️ الصفحة السابقة"
-    ui_next_page = "الصفحة التالية ▶️"
-    ui_page_text = "الصفحة"
+    ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر."
+    ui_page_label = "📍 انتقل للصفحة:"
     categories = {
         "⚽ الرياضة": "الرياضة",
         "🏛️ السياسة": "السياسة",
@@ -38,14 +36,12 @@ if lang_option == "العربية":
     }
 else:
     ui_title = "🌍 Global Comprehensive News Platform"
-    ui_desc = "Instant and live coverage of the latest Arab, Egyptian, and international news across all fields in real-time."
+    ui_desc = "Instant and live coverage of the latest Arab and international news across all fields in real-time."
     ui_select_source = "🌐 Select Newspaper or Source:"
     ui_btn_refresh = "🔄 Refresh News"
     ui_read_more = "🔗 Read full story from official source"
     ui_error = "Could not fetch data from this source right now, please choose another source."
-    ui_prev_page = "◀️ Previous Page"
-    ui_next_page = "Next Page ▶️"
-    ui_page_text = "Page"
+    ui_page_label = "📍 Go to page:"
     categories = {
         "⚽ Sports": "Sports",
         "🏛️ Politics": "Politics",
@@ -53,7 +49,7 @@ else:
         "📈 Economy": "Economy"
     }
 
-# 3. جدول المصادر الإخبارية المحدثة والنشطة تماماً
+# 3. جدول المصادر الإخبارية الشاملة
 NEWS_FEEDS = {
     "الرياضة": {
         "بي بي سي سبورت - كرة القدم": "http://feeds.bbci.co.uk/sport/football/rss.xml",
@@ -75,7 +71,7 @@ NEWS_FEEDS = {
     }
 }
 
-# 4. دالة جلب الأخبار المتطورة لتجاوز الحظر وقراءة الـ XML بدقة
+# 4. دالة جلب الأخبار
 def fetch_feed_data(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -87,11 +83,9 @@ def fetch_feed_data(url):
             return feedparser.parse(response.content)
     except Exception:
         pass
-    
-    # محاولة ثانية بديلة مباشرة عبر الـ feedparser في حال فشل الـ requests
     return feedparser.parse(url)
 
-# 5. دالة استخراج الصور بدقة
+# 5. دالة استخراج الصور
 def extract_image_url(entry):
     if 'media_content' in entry and len(entry.media_content) > 0:
         return entry.media_content[0].get('url')
@@ -119,14 +113,15 @@ if st.button(ui_btn_refresh):
 
 st.divider()
 
-# اختيار نوع الخبر عبر الأزرار المباشرة (النقر على نوع الخبر نفسه)
-selected_tab_label = st.radio(
-    "",
-    options=list(categories.keys()),
-    horizontal=True
-)
+# اختيار نوع الخبر باستخدام أزرار التبويب المباشرة (Tabs)
+tab_names = list(categories.keys())
+selected_tab = st.segmented_control("", tab_names, default=tab_names[0])
 
-selected_category = categories[selected_tab_label]
+# في حال عدم التحديد يتم التخلف إلى الخيار الأول
+if not selected_tab:
+    selected_tab = tab_names[0]
+
+selected_category = categories[selected_tab]
 
 st.divider()
 
@@ -139,7 +134,7 @@ st.divider()
 
 st.subheader(f"📌 {selected_source_name}")
 
-# جلب الأخبار وتطبيق نظام ترقيم الصفحات (Pagination)
+# جلب الأخبار وتطبيق نظام أرقام الصفحات Direct Number Pagination
 feed = fetch_feed_data(feed_url)
 
 if feed and feed.entries:
@@ -148,7 +143,7 @@ if feed and feed.entries:
     total_entries = len(entries)
     total_pages = max(1, (total_entries + items_per_page - 1) // items_per_page)
     
-    # إدارة حالة الصفحات
+    # إدارة حالة الصفحة الحالية
     if 'current_page' not in st.session_state:
         st.session_state.current_page = 1
         
@@ -156,21 +151,18 @@ if feed and feed.entries:
         st.session_state.current_page = 1
         st.session_state.last_source = selected_source_name
 
-    # أزرار التنقل بين الصفحات بالأعلى
-    col_p1, col_p2, col_p3 = st.columns([1, 2, 1])
-    with col_p1:
-        if st.button(ui_prev_page) and st.session_state.current_page > 1:
-            st.session_state.current_page -= 1
-            st.rerun()
-    with col_p2:
-        st.markdown(f"<div style='text-align: center;'><b>{ui_page_text} {st.session_state.current_page} / {total_pages}</b></div>", unsafe_allow_html=True)
-    with col_p3:
-        if st.button(ui_next_page) and st.session_state.current_page < total_pages:
-            st.session_state.current_page += 1
+    # عرض ترقيم الصفحات بأزرار رقمية مباشرة (1, 2, 3...)
+    st.write(f"**{ui_page_label}**")
+    page_cols = st.columns(total_pages)
+    for p in range(1, total_pages + 1):
+        btn_type = "primary" if p == st.session_state.current_page else "secondary"
+        if page_cols[p-1].button(str(p), key=f"top_p_{p}", type=btn_type):
+            st.session_state.current_page = p
             st.rerun()
 
     st.divider()
 
+    # جلب أخبار الصفحة المختارة
     start_idx = (st.session_state.current_page - 1) * items_per_page
     end_idx = start_idx + items_per_page
     current_page_entries = entries[start_idx:end_idx]
@@ -194,17 +186,13 @@ if feed and feed.entries:
         st.link_button(ui_read_more, entry.link)
         st.divider()
         
-    # أزرار التنقل بالأسفل
-    col_b1, col_b2, col_b3 = st.columns([1, 2, 1])
-    with col_b1:
-        if st.button(ui_prev_page + " ") and st.session_state.current_page > 1:
-            st.session_state.current_page -= 1
-            st.rerun()
-    with col_b2:
-        st.markdown(f"<div style='text-align: center;'><b>{ui_page_text} {st.session_state.current_page} / {total_pages}</b></div>", unsafe_allow_html=True)
-    with col_b3:
-        if st.button(ui_next_page + "  ") and st.session_state.current_page < total_pages:
-            st.session_state.current_page += 1
+    # عرض أزرار الترقيم الرقمية في أسفل الصفحة أيضاً
+    st.write(f"**{ui_page_label}**")
+    bottom_page_cols = st.columns(total_pages)
+    for p in range(1, total_pages + 1):
+        btn_type = "primary" if p == st.session_state.current_page else "secondary"
+        if bottom_page_cols[p-1].button(str(p), key=f"bottom_p_{p}", type=btn_type):
+            st.session_state.current_page = p
             st.rerun()
 else:
     st.warning(ui_error)
