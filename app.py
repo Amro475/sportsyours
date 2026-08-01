@@ -28,7 +28,9 @@ if lang_option == "العربية":
     ui_btn_refresh = "🔄 تحديث الأخبار"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الرسمي"
     ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر."
-    ui_page_label = "📍 انتقل للصفحة:"
+    ui_page_label = "📍 اختر الصفحة:"
+    ui_prev_btn = "◀ الصفحة السابقة"
+    ui_next_btn = "الصفحة التالية ▶"
     
     categories = {
         "⚽ الرياضة": "الرياضة",
@@ -63,7 +65,9 @@ else:
     ui_btn_refresh = "🔄 Refresh News"
     ui_read_more = "🔗 Read Full Story from Official Source"
     ui_error = "Could not fetch data from this source right now, please select another source."
-    ui_page_label = "📍 Go to Page:"
+    ui_page_label = "📍 Select Page:"
+    ui_prev_btn = "◀ Previous Page"
+    ui_next_btn = "Next Page ▶"
     
     categories = {
         "⚽ Sports": "الرياضة",
@@ -92,7 +96,7 @@ else:
         }
     }
 
-# 4. دالة جلب الأخبار المعدلة لتجاوز الحظر بأعلى كفاءة
+# 4. دالة جلب الأخبار
 def fetch_feed_data(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -109,26 +113,34 @@ def fetch_feed_data(url):
         pass
     return feedparser.parse(url)
 
-# 5. دالة استخراج الصور
-def extract_image_url(entry):
+# 5. دالة استخراج الصور عالية الجودة
+def extract_high_res_image(entry):
+    if 'enclosures' in entry:
+        for enc in entry.enclosures:
+            if enc.get('type', '').startswith('image/'):
+                return enc.get('href')
+                
     if 'media_content' in entry and len(entry.media_content) > 0:
-        return entry.media_content[0].get('url')
-    if 'media_thumbnail' in entry and len(entry.media_thumbnail) > 0:
-        return entry.media_thumbnail[0].get('url')
+        for media in entry.media_content:
+            if 'url' in media:
+                return media['url']
+
     if 'links' in entry:
         for link in entry.links:
             if link.get('type', '').startswith('image/'):
                 return link.get('href')
-                
+
     content_to_search = getattr(entry, 'summary', '') + getattr(entry, 'content', [{'value': ''}])[0]['value']
     soup = BeautifulSoup(content_to_search, 'html.parser')
     img_tag = soup.find('img')
     if img_tag and img_tag.get('src'):
-        return img_tag['src']
+        src = img_tag['src']
+        clean_src = src.split('?')[0] if 'http' in src else src
+        return clean_src
         
     return None
 
-# دالة لترجمة المحتوى تلقائياً باستخدام deep-translator
+# دالة الترجمة
 def translate_text(text, target_lang):
     if not text or not text.strip():
         return ""
@@ -138,6 +150,36 @@ def translate_text(text, target_lang):
         return translated if translated else text
     except Exception:
         return text
+
+# دالة الترقيم المنسقة النظيفة بمرونة عالية
+def render_clean_pagination(total_pages, key_prefix):
+    col_prev, col_select, col_next = st.columns([1, 2, 1])
+    
+    # زر الصفحة السابقة
+    with col_prev:
+        if st.button(ui_prev_btn, key=f"{key_prefix}_prev", disabled=(st.session_state.current_page == 1), use_container_width=True):
+            st.session_state.current_page -= 1
+            st.rerun()
+            
+    # اختيار رقم الصفحة من قائمة منسدلة أنيقة
+    with col_select:
+        page_options = list(range(1, total_pages + 1))
+        selected_p = st.selectbox(
+            ui_page_label,
+            options=page_options,
+            index=st.session_state.current_page - 1,
+            key=f"{key_prefix}_select",
+            label_visibility="collapsed"
+        )
+        if selected_p != st.session_state.current_page:
+            st.session_state.current_page = selected_p
+            st.rerun()
+            
+    # زر الصفحة التالية
+    with col_next:
+        if st.button(ui_next_btn, key=f"{key_prefix}_next", disabled=(st.session_state.current_page == total_pages), use_container_width=True):
+            st.session_state.current_page += 1
+            st.rerun()
 
 # 6. واجهة العرض الرئيسية
 st.title(ui_title)
@@ -182,15 +224,12 @@ if feed and feed.entries:
         st.session_state.current_page = 1
         st.session_state.last_source = selected_source_name
 
-    # أزرار الترقيم الرقمية بالأعلى
-    st.write(f"**{ui_page_label}**")
-    page_cols = st.columns(total_pages)
-    for p in range(1, total_pages + 1):
-        btn_type = "primary" if p == st.session_state.current_page else "secondary"
-        if page_cols[p-1].button(str(p), key=f"top_p_{p}", type=btn_type):
-            st.session_state.current_page = p
-            st.rerun()
+    # ضمان عدم تجاوز حدود الصفحات
+    if st.session_state.current_page > total_pages:
+        st.session_state.current_page = 1
 
+    # شريط التنقل العلوي
+    render_clean_pagination(total_pages, "top_p")
     st.divider()
 
     start_idx = (st.session_state.current_page - 1) * items_per_page
@@ -198,16 +237,15 @@ if feed and feed.entries:
     current_page_entries = entries[start_idx:end_idx]
 
     for entry in current_page_entries:
-        # ترجمة العنوان والملخص بناءً على اللغة المختارة
         translated_title = translate_text(entry.title, lang_option)
         st.markdown(f"### {translated_title}")
         
         if hasattr(entry, 'published') and entry.published:
             st.caption(f"🕒 {entry.published}")
         
-        img_url = extract_image_url(entry)
+        img_url = extract_high_res_image(entry)
         if img_url:
-            st.image(img_url, use_column_width=True)
+            st.image(img_url, use_container_width=True)
             
         summary_html = getattr(entry, 'summary', '')
         clean_text = BeautifulSoup(summary_html, "html.parser").get_text().strip()
@@ -219,13 +257,7 @@ if feed and feed.entries:
         st.link_button(ui_read_more, entry.link)
         st.divider()
         
-    # أزرار الترقيم الرقمية بالأسفل
-    st.write(f"**{ui_page_label}**")
-    bottom_page_cols = st.columns(total_pages)
-    for p in range(1, total_pages + 1):
-        btn_type = "primary" if p == st.session_state.current_page else "secondary"
-        if bottom_page_cols[p-1].button(str(p), key=f"bottom_p_{p}", type=btn_type):
-            st.session_state.current_page = p
-            st.rerun()
+    # شريط التنقل السفلي
+    render_clean_pagination(total_pages, "bottom_p")
 else:
     st.warning(ui_error)
