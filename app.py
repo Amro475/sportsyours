@@ -20,7 +20,7 @@ with st.sidebar:
     )
     st.divider()
 
-# ضبط جميع نصوص الواجهة والأقسام بناءً على اللغة
+# ضبط نصوص الواجهة بناءً على اللغة
 if lang_option == "العربية":
     ui_title = "🌍 المنصة الإخبارية الشاملة"
     ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العربية والعالمية في كافة المجالات لحظة بلحظة."
@@ -96,12 +96,10 @@ else:
         }
     }
 
-# 4. دالة جلب الأخبار
+# 4. دالة جلب خلاصة الأخبار
 def fetch_feed_data(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5'
     }
     try:
         response = requests.get(url, headers=headers, timeout=12)
@@ -113,11 +111,34 @@ def fetch_feed_data(url):
         pass
     return feedparser.parse(url)
 
-# 5. دالة متطورة لاستخراج وتحسين دقة الصور (HD Quality)
+# 5. دالة جلب الصورة الأصلية عالية الدقة (og:image) من رابط الخبر مباشرة مع الكاش لسرعة الأداء
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_og_image_from_link(article_url):
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        resp = requests.get(article_url, headers=headers, timeout=4)
+        if resp.status_code == 200:
+            soup = BeautifulSoup(resp.content, 'html.parser')
+            # البحث عن صورة og:image أو twitter:image عالية الجودة
+            og_tag = (soup.find('meta', property='og:image') or 
+                      soup.find('meta', attrs={'name': 'og:image'}) or 
+                      soup.find('meta', property='twitter:image'))
+            if og_tag and og_tag.get('content'):
+                return og_tag['content']
+    except Exception:
+        pass
+    return None
+
+# دالة استخراج وتدقيق الصورة لضمان أقصى وضوح HD
 def extract_hd_image(entry):
+    # 1. تجربة جلب الصورة عالية الدقة مباشرة من المقال الأصلي
+    if hasattr(entry, 'link') and entry.link:
+        og_img = fetch_og_image_from_link(entry.link)
+        if og_img:
+            return og_img
+
+    # 2. في حال تعذر ذلك، استخراج الصورة المتاحة في الـ RSS وتعديل الرابط للجودة العالية
     raw_url = None
-    
-    # 1. البحث في الوسائط عالية الجودة
     if 'media_content' in entry and len(entry.media_content) > 0:
         for media in entry.media_content:
             if 'url' in media:
@@ -130,12 +151,6 @@ def extract_hd_image(entry):
                 raw_url = enc.get('href')
                 break
 
-    if not raw_url and 'links' in entry:
-        for link in entry.links:
-            if link.get('type', '').startswith('image/'):
-                raw_url = link.get('href')
-                break
-
     if not raw_url:
         content_to_search = getattr(entry, 'summary', '') + getattr(entry, 'content', [{'value': ''}])[0]['value']
         soup = BeautifulSoup(content_to_search, 'html.parser')
@@ -143,12 +158,8 @@ def extract_hd_image(entry):
         if img_tag and img_tag.get('src'):
             raw_url = img_tag['src']
 
-    # 2. تحسين أبعاد الرابط واستبدال الصور المصغرة بالصور عالية الجودة (HD)
     if raw_url:
-        # إزالة علامات تقليل الجودة والتحجيم من الروابط
         clean_url = raw_url.split('?')[0]
-        # معالجة روابط سكاي نيوز والمواقع المشابهة لتحويل المصغرات إلى جودة عالية
-        clean_url = clean_url.replace('/thumb/', '/v/').replace('_thumb', '').replace('_150x150', '_800x600')
         return clean_url
 
     return None
@@ -164,7 +175,7 @@ def translate_text(text, target_lang):
     except Exception:
         return text
 
-# دالة الترقيم المنسقة النظيفة
+# دالة الترقيم المنسقة والنظيفة
 def render_clean_pagination(total_pages, key_prefix):
     col_prev, col_select, col_next = st.columns([1, 2, 1])
     
@@ -251,7 +262,7 @@ if feed and feed.entries:
         if hasattr(entry, 'published') and entry.published:
             st.caption(f"🕒 {entry.published}")
         
-        # عرض الصور عالية الدقة مع تحكّم ممتازة بالشكل والأبعاد
+        # استخراج وعرض الصورة بجودة HD الأصلية
         img_url = extract_hd_image(entry)
         if img_url:
             col_img, _ = st.columns([3, 1])
