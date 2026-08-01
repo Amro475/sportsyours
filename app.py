@@ -20,53 +20,59 @@ with st.sidebar:
     )
     st.divider()
 
-# ضبط نصوص الواجهة بناءً على اللغة
+# عند اختيار اللغة العربية: نعرض الصحف العالمية/الأجنبية مع ترجمة محتواها للعربية
 if lang_option == "العربية":
-    ui_title = "🌍 المنصة الإخبارية الشاملة"
-    ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العربية والعالمية في كافة المجالات لحظة بلحظة."
-    ui_select_source = "🌐 اختر الصحيفة أو المصدر:"
+    ui_title = "🌍 المنصة الإخبارية العالمية (مترجمة للعربية)"
+    ui_desc = "تغطية فورية لأحدث الأخبار من الصحف والمصادر الأجنبية والعالمية مترجمة كلياً إلى اللغة العربية."
+    ui_select_source = "🌐 اختر المصدر الأجنبي:"
     ui_btn_refresh = "🔄 تحديث الأخبار"
-    ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الرسمي"
+    ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الأصلي"
     ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر."
     ui_prev_btn = "◀ الصفحة السابقة"
     ui_next_btn = "الصفحة التالية ▶"
     
     categories = {
-        "⚽ الرياضة": "الرياضة",
-        "🏛️ السياسة": "السياسة",
-        "💻 التكنولوجيا": "التكنولوجيا",
-        "📈 الاقتصاد": "الاقتصاد",
-        "🎨 الفنون": "الفنون"
+        "⚽ الرياضة": "Sports",
+        "🏛️ السياسة": "Politics",
+        "💻 التكنولوجيا": "Technology",
+        "📈 الاقتصاد": "Economy",
+        "🎨 الفنون": "Arts"
     }
     
+    # مصادر أجنبية تُرجم للعربية
     NEWS_FEEDS = {
-        "الرياضة": {
-            "سكاي نيوز عربية - رياضة": "https://www.skynewsarabia.com/rss/sport.xml",
-            "فرانس 24 - رياضة": "https://www.france24.com/ar/%D8%B1%D9%8A%D8%A7%D8%B6%D8%A9/rss",
-            "بي بي سي سبورت": "http://feeds.bbci.co.uk/sport/football/rss.xml",
-            "سكاي سبورتس": "https://www.skysports.com/rss/12040"
+        "Sports": {
+            "بي بي سي سبورت (BBC Sport)": "http://feeds.bbci.co.uk/sport/football/rss.xml",
+            "سكاي سبورتس (Sky Sports)": "https://www.skysports.com/rss/12040",
+            "إي إس بي إن (ESPN)": "https://www.espn.com/espn/rss/news"
         },
-        "السياسة": {
-            "الجزيرة نت": "https://www.aljazeera.net/rss",
-            "بي بي سي عربي": "https://feeds.bbci.co.uk/arabic/rss.xml"
+        "Politics": {
+            "رويترز (Reuters World)": "https://www.theguardian.com/world/rss",
+            "بي بي سي نيوز (BBC World)": "http://feeds.bbci.co.uk/news/world/rss.xml",
+            "سي إن إن (CNN World)": "http://rss.cnn.com/rss/edition_world.rss"
         },
-        "التكنولوجيا": {
-            "تكنولوجيا (BBC عربي)": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
-            "تك كرانش": "https://techcrunch.com/feed/"
+        "Technology": {
+            "تك كرانش (TechCrunch)": "https://techcrunch.com/feed/",
+            "ذا فيرج (The Verge)": "https://www.theverge.com/rss/index.xml",
+            "وايرد (Wired)": "https://www.wired.com/feed/rss"
         },
-        "الاقتصاد": {
-            "اقتصاد (BBC عربي)": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
+        "Economy": {
+            "فاينانشال تايمز (Financial Times)": "https://www.ft.com/?format=rss",
+            "بلومبرغ / بي بي سي اقتصاد (BBC Business)": "http://feeds.bbci.co.uk/news/business/rss.xml",
+            "سي إن بي سي (CNBC)": "https://www.cnbc.com/id/100003114/device/rss/rss.html"
         },
-        "الفنون": {
-            "فرانس 24 - ثقافة وفنون": "https://www.france24.com/ar/%D8%AB%D9%82%D8%A7%D9%81%D8%A9/rss",
-            "بي بي سي عربي - ثقافة وفنون": "http://feeds.bbci.co.uk/arabic/artandculture/rss.xml",
-            "الجزيرة - ثقافة": "https://www.aljazeera.net/rss/culture"
+        "Arts": {
+            "بي بي سي فن وثقافة (BBC Arts)": "http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
+            "أرت نيوز (ARTnews)": "https://www.artnews.com/feed/",
+            "الغارديان - ثقافة (The Guardian Culture)": "https://www.theguardian.com/culture/rss"
         }
     }
+
+# عند اختيار اللغة الإنجليزية: نعرض الصحف العربية مع ترجمة محتواها للإنجليزية
 else:
-    ui_title = "🌍 Global News Platform"
-    ui_desc = "Live and instant coverage of the latest Arab and international news across all fields."
-    ui_select_source = "🌐 Select Newspaper or Source:"
+    ui_title = "🌍 Arab News Platform (Translated to English)"
+    ui_desc = "Live instant coverage of top Arab newspapers and sources translated into English."
+    ui_select_source = "🌐 Select Arab Newspaper/Source:"
     ui_btn_refresh = "🔄 Refresh News"
     ui_read_more = "🔗 Read Full Story from Official Source"
     ui_error = "Could not fetch data from this source right now, please select another source."
@@ -74,35 +80,37 @@ else:
     ui_next_btn = "Next Page ▶"
     
     categories = {
-        "⚽ Sports": "الرياضة",
-        "🏛️ Politics": "السياسة",
-        "💻 Technology": "التكنولوجيا",
-        "📈 Economy": "الاقتصاد",
-        "🎨 Arts & Culture": "الفنون"
+        "⚽ Sports": "Sports",
+        "🏛️ Politics": "Politics",
+        "💻 Technology": "Technology",
+        "📈 Economy": "Economy",
+        "🎨 Arts & Culture": "Arts"
     }
     
+    # مصادر عربية تُترجم للإنجليزية
     NEWS_FEEDS = {
-        "الرياضة": {
-            "Sky News Arabic - Sports": "https://www.skynewsarabia.com/rss/sport.xml",
-            "France 24 - Sports": "https://www.france24.com/ar/%D8%B1%D9%8A%D8%A7%D8%B6%D8%A9/rss",
-            "BBC Sport Football": "http://feeds.bbci.co.uk/sport/football/rss.xml",
-            "Sky Sports Football": "https://www.skysports.com/rss/12040"
+        "Sports": {
+            "Sky News Arabia - Sports": "https://www.skynewsarabia.com/rss/sport.xml",
+            "France 24 Arabic - Sports": "https://www.france24.com/ar/%D8%B1%D9%8A%D8%A7%D8%B6%D8%A9/rss",
+            "Kooora News": "https://www.kooora.com/default.aspx?showrss=news"
         },
-        "السياسة": {
-            "Al Jazeera Net": "https://www.aljazeera.net/rss",
-            "BBC Arabic News": "https://feeds.bbci.co.uk/arabic/rss.xml"
+        "Politics": {
+            "Al Jazeera Arabic": "https://www.aljazeera.net/rss",
+            "BBC News Arabic": "https://feeds.bbci.co.uk/arabic/rss.xml",
+            "Sky News Arabia": "https://www.skynewsarabia.com/rss/news.xml"
         },
-        "التكنولوجيا": {
-            "BBC Tech News": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
-            "TechCrunch": "https://techcrunch.com/feed/"
+        "Technology": {
+            "BBC Arabic - Tech": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
+            "AITNews (Aitnews Arab Tech)": "https://aitnews.com/feed/"
         },
-        "الاقتصاد": {
-            "BBC Economy": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
+        "Economy": {
+            "BBC Arabic - Business": "http://feeds.bbci.co.uk/arabic/business/rss.xml",
+            "Al Arabiya Business": "https://www.alarabiya.net/aswaq.xml"
         },
-        "الفنون": {
-            "France 24 - Culture": "https://www.france24.com/en/culture/rss",
-            "BBC Entertainment & Arts": "http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
-            "ARTnews": "https://www.artnews.com/feed/"
+        "Arts": {
+            "France 24 Arabic - Culture": "https://www.france24.com/ar/%D8%AB%D9%82%D8%A7%D9%81%D8%A9/rss",
+            "BBC Arabic - Arts & Culture": "http://feeds.bbci.co.uk/arabic/artandculture/rss.xml",
+            "Al Jazeera Culture": "https://www.aljazeera.net/rss/culture"
         }
     }
 
@@ -170,7 +178,8 @@ def extract_hd_image(entry):
 
     return None
 
-# دالة الترجمة
+# دالة الترجمة التلقائية الكاش لمنع التكرار
+@st.cache_data(ttl=86400, show_spinner=False)
 def translate_text(text, target_lang):
     if not text or not text.strip():
         return ""
@@ -207,7 +216,7 @@ if st.button(ui_btn_refresh):
 
 st.divider()
 
-# اختيار نوع الخبر (الأقسام في الأعلى)
+# اختيار نوع الخبر
 tab_names = list(categories.keys())
 selected_tab = st.segmented_control("", tab_names, default=tab_names[0])
 
