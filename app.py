@@ -10,38 +10,16 @@ st.set_page_config(
     layout="wide"
 )
 
-# 2. القائمة الجانبية لإعدادات القارئ (اللغة)
+# 2. القائمة الجانبية لإعدادات (اللغة)
 with st.sidebar:
-    st.markdown("### ⚙️ إعدادات القارئ")
+    st.markdown("### ⚙️ إعدادات / Settings")
     lang_option = st.selectbox(
         "اختر اللغة / Language",
         ["العربية", "English"]
     )
     st.divider()
 
-# 3. جدول المصادر الإخبارية الشاملة (المفاتيح الموحدة)
-NEWS_FEEDS = {
-    "الرياضة": {
-        "بي بي سي سبورت - كرة القدم": "http://feeds.bbci.co.uk/sport/football/rss.xml",
-        "بطولات (عربي - رياضة)": "https://www.btolat.com/rss/news",
-        "Sky Sports Football": "https://www.skysports.com/rss/12040",
-        "Goal.com - أخبار كرة القدم": "https://www.goal.com/feeds/en/news"
-    },
-    "السياسة": {
-        "الجزيرة نت (عربي / سياسة)": "https://www.aljazeera.net/rss",
-        "بي بي سي عربي - الرئيسية": "https://feeds.bbci.co.uk/arabic/rss.xml",
-        "رويترز - أخبار سياسية وعامة": "https://www.reutersagency.com/feed/?best-regions=middle-east&post_type=best"
-    },
-    "التكنولوجيا": {
-        "تكنولوجيا المعلومات (BBC)": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
-        "TechCrunch": "https://techcrunch.com/feed/"
-    },
-    "الاقتصاد": {
-        "بي بي سي عربي - الاقتصاد": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
-    }
-}
-
-# ضبط النصوص وقاموس الأزرار حسب اللغة المختارة
+# ضبط جميع نصوص الواجهة والأقسام والمصادر بناءً على اللغة المختارة
 if lang_option == "العربية":
     ui_title = "🌍 المنصة الإخبارية الشاملة"
     ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العربية والعالمية في كافة المجالات لحظة بلحظة."
@@ -50,25 +28,69 @@ if lang_option == "العربية":
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الرسمي"
     ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر."
     ui_page_label = "📍 انتقل للصفحة:"
-    categories_map = {
+    
+    categories = {
         "⚽ الرياضة": "الرياضة",
         "🏛️ السياسة": "السياسة",
         "💻 التكنولوجيا": "التكنولوجيا",
         "📈 الاقتصاد": "الاقتصاد"
     }
+    
+    NEWS_FEEDS = {
+        "الرياضة": {
+            "بي بي سي سبورت - كرة القدم": "http://feeds.bbci.co.uk/sport/football/rss.xml",
+            "بطولات (عربي - رياضة)": "https://www.btolat.com/rss/news",
+            "سكاي سبورتس - كرة القدم": "https://www.skysports.com/rss/12040",
+            "جول دوت كوم - أخبار كرة القدم": "https://www.goal.com/feeds/en/news"
+        },
+        "السياسة": {
+            "الجزيرة نت - أخبار سياسية": "https://www.aljazeera.net/rss",
+            "بي بي سي عربي - الرئيسية": "https://feeds.bbci.co.uk/arabic/rss.xml",
+            "رويترز - أخبار سياسية وعامة": "https://www.reutersagency.com/feed/?best-regions=middle-east&post_type=best"
+        },
+        "التكنولوجيا": {
+            "تكنولوجيا المعلومات (BBC عربي)": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
+            "تك كرانش - أخبار التكنولوجيا": "https://techcrunch.com/feed/"
+        },
+        "الاقتصاد": {
+            "بي بي سي عربي - الاقتصاد": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
+        }
+    }
 else:
-    ui_title = "🌍 Global Comprehensive News Platform"
-    ui_desc = "Instant and live coverage of the latest Arab and international news across all fields in real-time."
+    ui_title = "🌍 Global News Platform"
+    ui_desc = "Live and instant coverage of the latest Arab and international news across all fields."
     ui_select_source = "🌐 Select Newspaper or Source:"
     ui_btn_refresh = "🔄 Refresh News"
-    ui_read_more = "🔗 Read full story from official source"
-    ui_error = "Could not fetch data from this source right now, please choose another source."
-    ui_page_label = "📍 Go to page:"
-    categories_map = {
+    ui_read_more = "🔗 Read Full Story from Official Source"
+    ui_error = "Could not fetch data from this source right now, please select another source."
+    ui_page_label = "📍 Go to Page:"
+    
+    categories = {
         "⚽ Sports": "الرياضة",
         "🏛️ Politics": "السياسة",
         "💻 Technology": "التكنولوجيا",
         "📈 Economy": "الاقتصاد"
+    }
+    
+    NEWS_FEEDS = {
+        "الرياضة": {
+            "BBC Sport - Football": "http://feeds.bbci.co.uk/sport/football/rss.xml",
+            "Btolat - Arab Sports": "https://www.btolat.com/rss/news",
+            "Sky Sports Football": "https://www.skysports.com/rss/12040",
+            "Goal.com - Football News": "https://www.goal.com/feeds/en/news"
+        },
+        "السياسة": {
+            "Al Jazeera Net - Politics": "https://www.aljazeera.net/rss",
+            "BBC Arabic - Home": "https://feeds.bbci.co.uk/arabic/rss.xml",
+            "Reuters - Political & General News": "https://www.reutersagency.com/feed/?best-regions=middle-east&post_type=best"
+        },
+        "التكنولوجيا": {
+            "BBC Arabic - Tech": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
+            "TechCrunch - Tech News": "https://techcrunch.com/feed/"
+        },
+        "الاقتصاد": {
+            "BBC Arabic - Business": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
+        }
     }
 
 # 4. دالة جلب الأخبار
@@ -113,21 +135,20 @@ if st.button(ui_btn_refresh):
 
 st.divider()
 
-# اختيار نوع الخبر عبر الأزرار المباشرة (Segmented Control)
-tab_options = list(categories_map.keys())
-selected_tab = st.segmented_control("", tab_options, default=tab_options[0])
+# اختيار نوع الخبر باستخدام أزرار التبويب المباشرة (Tabs)
+tab_names = list(categories.keys())
+selected_tab = st.segmented_control("", tab_names, default=tab_names[0])
 
-# في حال إلغاء التحديد نرجع إلى الخيار الأول تلقائياً
+# في حال عدم التحديد يتم التخلف إلى الخيار الأول
 if not selected_tab:
-    selected_tab = tab_options[0]
+    selected_tab = tab_names[0]
 
-# الحصول على مفتاح NEWS_FEEDS الصحيح
-selected_category = categories_map[selected_tab]
+selected_category = categories[selected_tab]
 
 st.divider()
 
 # قائمة اختيار المصدر التابعة للقسم المحدد
-sources = NEWS_FEEDS.get(selected_category, {})
+sources = NEWS_FEEDS[selected_category]
 selected_source_name = st.selectbox(ui_select_source, list(sources.keys()))
 
 feed_url = sources[selected_source_name]
@@ -135,12 +156,12 @@ st.divider()
 
 st.subheader(f"📌 {selected_source_name}")
 
-# جلب الأخبار وتطبيق نظام أرقام الصفحات (Pagination)
+# جلب الأخبار وتطبيق نظام أرقام الصفحات Direct Number Pagination
 feed = fetch_feed_data(feed_url)
 
 if feed and feed.entries:
     entries = feed.entries
-    items_per_page = 5
+    items_per_page = 5  # عدد الأخبار في كل صفحة
     total_entries = len(entries)
     total_pages = max(1, (total_entries + items_per_page - 1) // items_per_page)
     
@@ -152,7 +173,7 @@ if feed and feed.entries:
         st.session_state.current_page = 1
         st.session_state.last_source = selected_source_name
 
-    # عرض أرقام الصفحات بأزرار رقمية مباشرة (1, 2, 3...)
+    # عرض ترقيم الصفحات بأزرار رقمية مباشرة (1, 2, 3...)
     st.write(f"**{ui_page_label}**")
     page_cols = st.columns(total_pages)
     for p in range(1, total_pages + 1):
@@ -163,7 +184,7 @@ if feed and feed.entries:
 
     st.divider()
 
-    # تحديد الأخبار المعروضة بالصفحة
+    # جلب أخبار الصفحة المختارة
     start_idx = (st.session_state.current_page - 1) * items_per_page
     end_idx = start_idx + items_per_page
     current_page_entries = entries[start_idx:end_idx]
@@ -187,7 +208,7 @@ if feed and feed.entries:
         st.link_button(ui_read_more, entry.link)
         st.divider()
         
-    # عرض أزرار الترقيم الرقمية في الأسفل أيضاً
+    # عرض أزرار الترقيم الرقمية في أسفل الصفحة أيضاً
     st.write(f"**{ui_page_label}**")
     bottom_page_cols = st.columns(total_pages)
     for p in range(1, total_pages + 1):
