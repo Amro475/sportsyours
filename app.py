@@ -21,10 +21,10 @@ with st.sidebar:
     )
     st.divider()
 
-# عند اختيار اللغة العربية: نعرض الصحف العالمية/الأجنبية مع ترجمة محتواها للعربية
+# ضبط المحتوى والمصادر بناءً على اختيار اللغة
 if lang_option == "العربية":
-    ui_title = "🌍 المنصة الإخبارية العالمية"
-    ui_desc = "تغطية فورية لأحدث الأخبار من الصحف والمصادر العربية والعالمية."
+    ui_title = "🌍 المنصة الإخبارية العالمية (مترجمة للعربية)"
+    ui_desc = "تغطية فورية لأحدث الأخبار من الصحف والمصادر الأجنبية والعالمية مترجمة كلياً إلى اللغة العربية."
     ui_select_source = "🌐 اختر المصدر الأجنبي:"
     ui_btn_refresh = "🔄 تحديث الأخبار"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الأصلي"
@@ -47,7 +47,7 @@ if lang_option == "العربية":
             "إي إس بي إن (ESPN)": "https://www.espn.com/espn/rss/news"
         },
         "Politics": {
-            "رويترز (Reuters World)": "https://www.theguardian.com/world/rss",
+            "رويترز / الغارديان (The Guardian)": "https://www.theguardian.com/world/rss",
             "بي بي سي نيوز (BBC World)": "http://feeds.bbci.co.uk/news/world/rss.xml",
             "سي إن إن (CNN World)": "http://rss.cnn.com/rss/edition_world.rss"
         },
@@ -124,16 +124,18 @@ def fetch_feed_data(url):
         pass
     return feedparser.parse(url)
 
-# 5. دالة استخراج رابط الصورة
+# 5. دالة جلب رابط الصورة بأعلى جودة بدقة HD
 @st.cache_data(ttl=3600, show_spinner=False)
-def fetch_og_image_from_link(article_url):
+def fetch_hd_og_image(article_url):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         resp = requests.get(article_url, headers=headers, timeout=4)
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.content, 'html.parser')
+            # البحث عن وسم og:image الخاص بروابط المعاينة عالية الدقة
             og_tag = (soup.find('meta', property='og:image') or 
                       soup.find('meta', attrs={'name': 'og:image'}) or 
+                      soup.find('meta', property='twitter:image:src') or
                       soup.find('meta', property='twitter:image'))
             if og_tag and og_tag.get('content'):
                 return og_tag['content']
@@ -141,26 +143,25 @@ def fetch_og_image_from_link(article_url):
         pass
     return None
 
-def extract_image_url(entry):
-    # 1. البحث بداخل وسائل الإعلام المرفقة media:content
+def extract_best_hd_image(entry):
+    # أولاً: محاولة استخراج الصورة الأصلية من صفحة المقال لضمان الدقة العالية HD
+    if hasattr(entry, 'link') and entry.link:
+        hd_url = fetch_hd_og_image(entry.link)
+        if hd_url:
+            return hd_url
+
+    # ثانياً: البحث عن روابط الصور المرفقة داخل الـ RSS
     if 'media_content' in entry and len(entry.media_content) > 0:
         for media in entry.media_content:
             if 'url' in media:
                 return media['url']
 
-    # 2. البحث بداخل المرفقات enclosures
     if 'enclosures' in entry:
         for enc in entry.enclosures:
             if enc.get('type', '').startswith('image/'):
                 return enc.get('href')
 
-    # 3. جلب الصورة عالية الدقة من المقال الأصلي مباشرة
-    if hasattr(entry, 'link') and entry.link:
-        og_img = fetch_og_image_from_link(entry.link)
-        if og_img:
-            return og_img
-
-    # 4. استخراج الصورة من نص الملخص HTML
+    # ثالثاً: البحث داخل ملخص الخبر HTML
     content_to_search = getattr(entry, 'summary', '') + getattr(entry, 'content', [{'value': ''}])[0]['value']
     soup = BeautifulSoup(content_to_search, 'html.parser')
     img_tag = soup.find('img')
@@ -169,21 +170,24 @@ def extract_image_url(entry):
 
     return None
 
-# دالة لعرض الصورة بأمان وضمان عدم حظر السيرفرات لها
-def display_safe_image(img_url):
+# دالة عرض الصورة بعناية وبدون مشاكل في الجودة
+def display_hd_image(img_url):
     try:
-        # المحاولة الأولى: التمرير المباشر
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        response = requests.get(img_url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            image_bytes = BytesIO(response.content)
+            # عرض الصورة بحجمها ومظهرها الطبيعي الواضح
+            st.image(image_bytes, use_container_width=True)
+            return
+    except Exception:
+        pass
+    
+    # محاولة بديلة سريعة
+    try:
         st.image(img_url, use_container_width=True)
     except Exception:
-        try:
-            # المحاولة الثانية: جلب الصورة بالـ Request مع User-Agent لتفادي حجب السيرفر
-            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-            response = requests.get(img_url, headers=headers, timeout=5)
-            if response.status_code == 200:
-                image_bytes = BytesIO(response.content)
-                st.image(image_bytes, use_container_width=True)
-        except Exception:
-            pass
+        pass
 
 # دالة الترجمة التلقائية الكاش
 @st.cache_data(ttl=86400, show_spinner=False)
@@ -274,12 +278,12 @@ if feed and feed.entries:
         if hasattr(entry, 'published') and entry.published:
             st.caption(f"🕒 {entry.published}")
         
-        # استخراج وعرض الصورة بأمان
-        img_url = extract_image_url(entry)
+        # استخراج الصورة عالية الدقة وعرضها
+        img_url = extract_best_hd_image(entry)
         if img_url:
             col_img, _ = st.columns([3, 1])
             with col_img:
-                display_safe_image(img_url)
+                display_hd_image(img_url)
             
         summary_html = getattr(entry, 'summary', '')
         clean_text = BeautifulSoup(summary_html, "html.parser").get_text().strip()
