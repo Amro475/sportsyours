@@ -2,10 +2,7 @@ import streamlit as st
 import feedparser
 import requests
 from bs4 import BeautifulSoup
-from googletrans import Translator
-
-# إعداد مترجم جوجل
-translator = Translator()
+from deep_translator import GoogleTranslator
 
 # 1. إعدادات الصفحة والواجهة
 st.set_page_config(
@@ -126,16 +123,16 @@ def extract_image_url(entry):
         
     return None
 
-# دالة لترجمة المحتوى تلقائياً
+# دالة لترجمة المحتوى تلقائياً باستخدام deep-translator
 def translate_text(text, target_lang):
-    if not text:
+    if not text or not text.strip():
         return ""
     try:
-        dest = 'ar' if target_lang == "العربية" else 'en'
-        translated = translator.translate(text, dest=dest)
-        return translated.text
+        target = 'ar' if target_lang == "العربية" else 'en'
+        translated = GoogleTranslator(source='auto', target=target).translate(text)
+        return translated if translated else text
     except Exception:
-        return text  # في حال تعذر الترجمة يتم إرجاع النص كما هو
+        return text  # إرجاع النص الاصلي في حال حدوث خطأ شبكة
 
 # 6. واجهة العرض الرئيسية
 st.title(ui_title)
@@ -146,7 +143,7 @@ if st.button(ui_btn_refresh):
 
 st.divider()
 
-# اختيار نوع الخبر باستخدام أزرار التبويب المباشرة (Tabs)
+# اختيار نوع الخبر
 tab_names = list(categories.keys())
 selected_tab = st.segmented_control("", tab_names, default=tab_names[0])
 
@@ -180,7 +177,7 @@ if feed and feed.entries:
         st.session_state.current_page = 1
         st.session_state.last_source = selected_source_name
 
-    # أزرار الترقيم الرقمية في الأعلى
+    # أزرار الترقيم الرقمية بالأعلى
     st.write(f"**{ui_page_label}**")
     page_cols = st.columns(total_pages)
     for p in range(1, total_pages + 1):
@@ -217,7 +214,7 @@ if feed and feed.entries:
         st.link_button(ui_read_more, entry.link)
         st.divider()
         
-    # أزرار الترقيم الرقمية في الأسفل
+    # أزرار الترقيم الرقمية بالأسفل
     st.write(f"**{ui_page_label}**")
     bottom_page_cols = st.columns(total_pages)
     for p in range(1, total_pages + 1):
