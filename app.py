@@ -39,7 +39,8 @@ if lang_option == "العربية":
     
     NEWS_FEEDS = {
         "الرياضة": {
-            "بطولات (عربي)": "https://www.btolat.com/rss/news",
+            "سكاي نيوز عربية - رياضة": "https://www.skynewsarabia.com/rss/sport.xml",
+            "فرانس 24 - رياضة": "https://www.france24.com/ar/%D8%B1%D9%8A%D8%A7%D8%B6%D8%A9/rss",
             "بي بي سي سبورت": "http://feeds.bbci.co.uk/sport/football/rss.xml",
             "سكاي سبورتس": "https://www.skysports.com/rss/12040"
         },
@@ -73,9 +74,10 @@ else:
     
     NEWS_FEEDS = {
         "الرياضة": {
+            "Sky News Arabic - Sports": "https://www.skynewsarabia.com/rss/sport.xml",
+            "France 24 - Sports": "https://www.france24.com/ar/%D8%B1%D9%8A%D8%A7%D8%B6%D8%A9/rss",
             "BBC Sport Football": "http://feeds.bbci.co.uk/sport/football/rss.xml",
-            "Sky Sports Football": "https://www.skysports.com/rss/12040",
-            "Btolat Sports": "https://www.btolat.com/rss/news"
+            "Sky Sports Football": "https://www.skysports.com/rss/12040"
         },
         "السياسة": {
             "Al Jazeera Net": "https://www.aljazeera.net/rss",
@@ -90,16 +92,19 @@ else:
         }
     }
 
-# 4. دالة جلب الأخبار
+# 4. دالة جلب الأخبار المعدلة لتجاوز الحظر بأعلى كفاءة
 def fetch_feed_data(url):
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5'
     }
     try:
-        response = requests.get(url, headers=headers, timeout=15)
+        response = requests.get(url, headers=headers, timeout=12)
         if response.status_code == 200:
-            return feedparser.parse(response.content)
+            parsed = feedparser.parse(response.content)
+            if parsed.entries:
+                return parsed
     except Exception:
         pass
     return feedparser.parse(url)
@@ -132,7 +137,7 @@ def translate_text(text, target_lang):
         translated = GoogleTranslator(source='auto', target=target).translate(text)
         return translated if translated else text
     except Exception:
-        return text  # إرجاع النص الاصلي في حال حدوث خطأ شبكة
+        return text
 
 # 6. واجهة العرض الرئيسية
 st.title(ui_title)
