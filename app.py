@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. إضافة لمسات وتصميم عصري (Modern Theme Custom CSS)
+# 2. تصميم وتنسيق عصري (Modern Theme CSS)
 st.markdown("""
 <style>
     /* خلفية الصفحة وتحسين الخطوط */
@@ -21,17 +21,7 @@ st.markdown("""
         background-color: #f8f9fa;
     }
     
-    /* تنسيق العنوان الرئيسي */
-    .main-header {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        font-weight: 800;
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 5px;
-    }
-    
-    /* تصميم بطاقات الأخبار العصري */
+    /* تصميم بطاقات الأخبار */
     .news-card {
         background-color: #ffffff;
         padding: 24px;
@@ -42,28 +32,17 @@ st.markdown("""
         transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
     .news-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     }
     
-    /* تحسين شكل الأزرار */
-    .stButton>button {
-        border-radius: 10px;
-        font-weight: 600;
-        transition: all 0.2s ease;
-    }
-    
-    /* تخصيص زر القراءة من المصدر */
+    /* جعل زر القراءة متناسق */
     .stLinkButton>a {
         border-radius: 8px !important;
         font-weight: 600 !important;
         background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
         color: white !important;
         border: none !important;
-        box-shadow: 0 3px 10px rgba(13, 110, 253, 0.25);
-    }
-    .stLinkButton>a:hover {
-        box-shadow: 0 5px 15px rgba(13, 110, 253, 0.4);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -77,10 +56,39 @@ with st.sidebar:
     )
     st.divider()
 
-# ضبط المحتوى والمصادر بناءً على اختيار اللغة
+# 4. توحيد مصادر الأخبار (لكي تظل هي نفسها دائماً وتترجم فقط عند تغيير اللغة)
+NEWS_FEEDS = {
+    "Sports": {
+        "بي بي سي سبورت (BBC Sport)": "http://feeds.bbci.co.uk/sport/football/rss.xml",
+        "سكاي سبورتس (Sky Sports)": "https://www.skysports.com/rss/12040",
+        "إي إس بي إن (ESPN)": "https://www.espn.com/espn/rss/news"
+    },
+    "Politics": {
+        "بي بي سي نيوز (BBC World)": "http://feeds.bbci.co.uk/news/world/rss.xml",
+        "الغارديان (The Guardian World)": "https://www.theguardian.com/world/rss",
+        "سي إن إن (CNN World)": "http://rss.cnn.com/rss/edition_world.rss"
+    },
+    "Technology": {
+        "تك كرانش (TechCrunch)": "https://techcrunch.com/feed/",
+        "ذا فيرج (The Verge)": "https://www.theverge.com/rss/index.xml",
+        "وايرد (Wired)": "https://www.wired.com/feed/rss"
+    },
+    "Economy": {
+        "بي بي سي اقتصاد (BBC Business)": "http://feeds.bbci.co.uk/news/business/rss.xml",
+        "فاينانشال تايمز (Financial Times)": "https://www.ft.com/?format=rss",
+        "سي إن بي سي (CNBC)": "https://www.cnbc.com/id/100003114/device/rss/rss.html"
+    },
+    "Arts": {
+        "بي بي سي فن وثقافة (BBC Arts)": "http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
+        "أرت نيوز (ARTnews)": "https://www.artnews.com/feed/",
+        "الغارديان ثقافة (The Guardian Culture)": "https://www.theguardian.com/culture/rss"
+    }
+}
+
+# ضبط نصوص الواجهة بناءً على اللغة
 if lang_option == "العربية":
-    ui_title = "🌍 المنصة الإخبارية العالمية"
-    ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العالمية والمحلية بأسلوب عصري."
+    ui_title = "🌍 المنصة الإخبارية الشاملة"
+    ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار بأسلوب عصري ومترجم كلياً."
     ui_select_source = "🌐 اختر المصدر الإخباري:"
     ui_btn_refresh = "🔄 تحديث الأخبار"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الأصلي"
@@ -95,39 +103,10 @@ if lang_option == "العربية":
         "📈 الاقتصاد": "Economy",
         "🎨 الفنون": "Arts"
     }
-    
-    NEWS_FEEDS = {
-        "Sports": {
-            "بي بي سي سبورت (BBC Sport)": "http://feeds.bbci.co.uk/sport/football/rss.xml",
-            "سكاي سبورتس (Sky Sports)": "https://www.skysports.com/rss/12040",
-            "إي إس بي إن (ESPN)": "https://www.espn.com/espn/rss/news"
-        },
-        "Politics": {
-            "رويترز / الغارديان (The Guardian)": "https://www.theguardian.com/world/rss",
-            "بي بي سي نيوز (BBC World)": "http://feeds.bbci.co.uk/news/world/rss.xml",
-            "سي إن إن (CNN World)": "http://rss.cnn.com/rss/edition_world.rss"
-        },
-        "Technology": {
-            "تك كرانش (TechCrunch)": "https://techcrunch.com/feed/",
-            "ذا فيرج (The Verge)": "https://www.theverge.com/rss/index.xml",
-            "وايرد (Wired)": "https://www.wired.com/feed/rss"
-        },
-        "Economy": {
-            "فاينانشال تايمز (Financial Times)": "https://www.ft.com/?format=rss",
-            "بي بي سي اقتصاد (BBC Business)": "http://feeds.bbci.co.uk/news/business/rss.xml",
-            "سي إن بي سي (CNBC)": "https://www.cnbc.com/id/100003114/device/rss/rss.html"
-        },
-        "Arts": {
-            "بي بي سي فن وثقافة (BBC Arts)": "http://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
-            "أرت نيوز (ARTnews)": "https://www.artnews.com/feed/",
-            "الغارديان - ثقافة (The Guardian Culture)": "https://www.theguardian.com/culture/rss"
-        }
-    }
-
 else:
-    ui_title = "🌍 Arab News Platform (Translated to English)"
-    ui_desc = "Live instant coverage of top Arab newspapers and sources translated into English."
-    ui_select_source = "🌐 Select Arab Newspaper/Source:"
+    ui_title = "🌍 Comprehensive News Platform"
+    ui_desc = "Live and instant coverage of the latest news with automatic translation."
+    ui_select_source = "🌐 Select News Source:"
     ui_btn_refresh = "🔄 Refresh News"
     ui_read_more = "🔗 Read Full Story from Official Source"
     ui_error = "Could not fetch data from this source right now, please select another source."
@@ -139,33 +118,10 @@ else:
         "🏛️ Politics": "Politics",
         "💻 Technology": "Technology",
         "📈 Economy": "Economy",
-        "🎨 Arts & Culture": "Arts"
-    }
-    
-    NEWS_FEEDS = {
-        "Sports": {
-            "Sky News Arabia - Sports": "https://www.skynewsarabia.com/rss/sport.xml",
-            "France 24 Arabic - Sports": "https://www.france24.com/ar/%D8%B1%D9%8A%D8%A7%D8%B6%D8%A9/rss"
-        },
-        "Politics": {
-            "Al Jazeera Arabic": "https://www.aljazeera.net/rss",
-            "BBC News Arabic": "https://feeds.bbci.co.uk/arabic/rss.xml",
-            "Sky News Arabia": "https://www.skynewsarabia.com/rss/news.xml"
-        },
-        "Technology": {
-            "BBC Arabic - Tech": "http://feeds.bbci.co.uk/arabic/scienceandtech/rss.xml",
-            "AITNews (Arab Tech)": "https://aitnews.com/feed/"
-        },
-        "Economy": {
-            "BBC Arabic - Business": "http://feeds.bbci.co.uk/arabic/business/rss.xml"
-        },
-        "Arts": {
-            "France 24 Arabic - Culture": "https://www.france24.com/ar/%D8%AB%D9%82%D8%A7%D9%81%D8%A9/rss",
-            "BBC Arabic - Arts & Culture": "http://feeds.bbci.co.uk/arabic/artandculture/rss.xml"
-        }
+        "🎨 Arts": "Arts"
     }
 
-# 4. دالة جلب خلاصة الأخبار
+# 5. دالة جلب خلاصة الأخبار
 def fetch_feed_data(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -180,7 +136,7 @@ def fetch_feed_data(url):
         pass
     return feedparser.parse(url)
 
-# 5. دالة جلب رابط الصورة بأعلى جودة بدقة HD
+# 6. دالة استخراج وتجهيز الصورة بدقة HD
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_hd_og_image(article_url):
     try:
@@ -222,7 +178,6 @@ def extract_best_hd_image(entry):
 
     return None
 
-# دالة عرض الصورة بعناية وبدون مشاكل في الجودة
 def display_hd_image(img_url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
@@ -239,7 +194,7 @@ def display_hd_image(img_url):
     except Exception:
         pass
 
-# دالة الترجمة التلقائية الكاش
+# دالة الترجمة الذكية الكاش
 @st.cache_data(ttl=86400, show_spinner=False)
 def translate_text(text, target_lang):
     if not text or not text.strip():
@@ -261,47 +216,61 @@ def render_clean_pagination(total_pages, key_prefix):
             st.rerun()
             
     with col_info:
-        st.markdown(f"<p style='text-align: center; margin-top: 8px; font-weight: bold; font-size: 1.1rem; color: #495057;'>{st.session_state.current_page} / {total_pages}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align: center; margin-top: 8px; font-weight: bold; font-size: 1.1rem;'>{st.session_state.current_page} / {total_pages}</p>", unsafe_allow_html=True)
             
     with col_next:
         if st.button(ui_next_btn, key=f"{key_prefix}_next", disabled=(st.session_state.current_page == total_pages), use_container_width=True):
             st.session_state.current_page += 1
             st.rerun()
 
-# 6. واجهة العرض الرئيسية
-st.markdown(f"<h1 class='main-header'>{ui_title}</h1>", unsafe_allow_html=True)
+# 7. بناء الواجهة الرئيسية
+st.title(ui_title)
 st.write(ui_desc)
 
-# إعادة ضبط الصفحة والقسم الأول عند الضغط على زر التحديث
+# تهيئة Session State للمرة الأولى
+tab_names = list(categories.keys())
+if 'selected_category_tab' not in st.session_state or st.session_state.selected_category_tab not in tab_names:
+    st.session_state.selected_category_tab = tab_names[0]
+
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = 1
+
+# عند الضغط على زر التحديث: يعود تلقائياً لأول قسم ولأول خبر
 if st.button(ui_btn_refresh):
     st.session_state.current_page = 1
-    tab_names = list(categories.keys())
     st.session_state.selected_category_tab = tab_names[0]
+    if 'selected_source_index' in st.session_state:
+        st.session_state.selected_source_index = 0
     st.rerun()
 
 st.divider()
 
-# إدارة تبويب الأقسام في الـ Session State
-tab_names = list(categories.keys())
-
-if 'selected_category_tab' not in st.session_state:
-    st.session_state.selected_category_tab = tab_names[0]
-
-# اختيار نوع الخبر
-selected_tab = st.segmented_control("", tab_names, default=st.session_state.selected_category_tab)
+# عرض القائمة بشكل أفقي (Horizontal segmented control)
+selected_tab = st.segmented_control(
+    "",
+    tab_names,
+    default=st.session_state.selected_category_tab
+)
 
 if not selected_tab:
     selected_tab = tab_names[0]
 
 st.session_state.selected_category_tab = selected_tab
-selected_category = categories[selected_tab]
+selected_category_key = categories[selected_tab]
 
 st.divider()
 
-sources = NEWS_FEEDS[selected_category]
-selected_source_name = st.selectbox(ui_select_source, list(sources.keys()))
+# جلب قائمة المصادر بناءً على القسم المحدد
+sources = NEWS_FEEDS[selected_category_key]
+source_names = list(sources.keys())
 
+# عند ضبط التحديث يتم التمرير على أول مصدر تلقائياً
+if 'selected_source_index' not in st.session_state or st.session_state.selected_source_index >= len(source_names):
+    st.session_state.selected_source_index = 0
+
+selected_source_name = st.selectbox(ui_select_source, source_names, index=st.session_state.selected_source_index)
 feed_url = sources[selected_source_name]
+
 st.divider()
 
 st.subheader(f"📌 {selected_source_name}")
@@ -314,9 +283,7 @@ if feed and feed.entries:
     total_entries = len(entries)
     total_pages = max(1, (total_entries + items_per_page - 1) // items_per_page)
     
-    if 'current_page' not in st.session_state:
-        st.session_state.current_page = 1
-        
+    # إعادة التصفير عند تغيير المصدر
     if 'last_source' not in st.session_state or st.session_state.last_source != selected_source_name:
         st.session_state.current_page = 1
         st.session_state.last_source = selected_source_name
@@ -332,11 +299,10 @@ if feed and feed.entries:
     current_page_entries = entries[start_idx:end_idx]
 
     for entry in current_page_entries:
+        # ترجمة العنوان والمضمون لضمان المطابقة الكاملة
         translated_title = translate_text(entry.title, lang_option)
         
-        # تغليف كل خبر في بطاقة عصرية جميلة
         st.markdown("<div class='news-card'>", unsafe_allow_html=True)
-        
         st.markdown(f"### {translated_title}")
         
         if hasattr(entry, 'published') and entry.published:
@@ -356,7 +322,6 @@ if feed and feed.entries:
             st.write(translated_summary)
             
         st.link_button(ui_read_more, entry.link)
-        
         st.markdown("</div>", unsafe_allow_html=True)
         
     render_clean_pagination(total_pages, "bottom_p")
