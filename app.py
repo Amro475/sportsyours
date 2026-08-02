@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. تصميم وتنسيق عصري (Modern Theme CSS)
+# 2. تصميم وتنسيق عصري مع تخصيص المؤشر الأحمر للقائمة الرأسية (CSS Customization)
 st.markdown("""
 <style>
     /* خلفية الصفحة وتحسين الخطوط */
@@ -21,7 +21,7 @@ st.markdown("""
         background-color: #f8f9fa;
     }
     
-    /* تصميم بطاقات الأخبار */
+    /* تصميم بطاقات الأخبار العصري */
     .news-card {
         background-color: #ffffff;
         padding: 24px;
@@ -44,19 +44,27 @@ st.markdown("""
         color: white !important;
         border: none !important;
     }
+
+    /* تخصيص المؤشر الأحمر للقوائم الرأسية في القائمة الجانبية Sidebar */
+    div[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"] {
+        background-color: #ffebee !important;
+        border-right: 4px solid #d32f2f !important;
+        border-left: 4px solid #d32f2f !important;
+        border-radius: 8px;
+        color: #d32f2f !important;
+        font-weight: bold;
+    }
+    
+    div[data-testid="stSidebar"] div[role="radiogroup"] > label {
+        padding: 8px 12px;
+        margin-bottom: 4px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. القائمة الجانبية لإعدادات (اللغة)
-with st.sidebar:
-    st.markdown("### ⚙️ إعدادات / Settings")
-    lang_option = st.selectbox(
-        "اختر اللغة / Language",
-        ["العربية", "English"]
-    )
-    st.divider()
-
-# 4. توحيد مصادر الأخبار (لكي تظل هي نفسها دائماً وتترجم فقط عند تغيير اللغة)
+# 3. موحد مصادر الأخبار لضمان تماثل محتوى الألوان والأخبار عند تغيير اللغة
 NEWS_FEEDS = {
     "Sports": {
         "بي بي سي سبورت (BBC Sport)": "http://feeds.bbci.co.uk/sport/football/rss.xml",
@@ -85,10 +93,19 @@ NEWS_FEEDS = {
     }
 }
 
-# ضبط نصوص الواجهة بناءً على اللغة
+# 4. إدارة القائمة الجانبية ولغة الواجهة
+with st.sidebar:
+    st.markdown("### ⚙️ إعدادات / Settings")
+    lang_option = st.selectbox(
+        "اختر اللغة / Language",
+        ["العربية", "English"]
+    )
+    st.divider()
+
 if lang_option == "العربية":
     ui_title = "🌍 المنصة الإخبارية الشاملة"
     ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار بأسلوب عصري ومترجم كلياً."
+    ui_select_category = "📂 أقسام الأخبار الرئيسية:"
     ui_select_source = "🌐 اختر المصدر الإخباري:"
     ui_btn_refresh = "🔄 تحديث الأخبار"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الأصلي"
@@ -106,6 +123,7 @@ if lang_option == "العربية":
 else:
     ui_title = "🌍 Comprehensive News Platform"
     ui_desc = "Live and instant coverage of the latest news with automatic translation."
+    ui_select_category = "📂 Main News Categories:"
     ui_select_source = "🌐 Select News Source:"
     ui_btn_refresh = "🔄 Refresh News"
     ui_read_more = "🔗 Read Full Story from Official Source"
@@ -121,7 +139,41 @@ else:
         "🎨 Arts": "Arts"
     }
 
-# 5. دالة جلب خلاصة الأخبار
+# 5. تهيئة الـ Session State وإدارة الرجوع لأول خيار تلقائياً
+cat_labels = list(categories.keys())
+
+if 'selected_cat_index' not in st.session_state:
+    st.session_state.selected_cat_index = 0
+
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = 1
+
+if 'selected_source_index' not in st.session_state:
+    st.session_state.selected_source_index = 0
+
+# زر تحديث الأخبار إعادة التعيين لأول خيار بالكامل
+with st.sidebar:
+    if st.button(ui_btn_refresh, use_container_width=True):
+        st.session_state.selected_cat_index = 0
+        st.session_state.current_page = 1
+        st.session_state.selected_source_index = 0
+        st.rerun()
+    st.divider()
+
+    # القوائم الرأسية الجانبية اختيار الأقسام
+    st.markdown(f"#### {ui_select_category}")
+    selected_category_label = st.radio(
+        label="",
+        options=cat_labels,
+        index=st.session_state.selected_cat_index,
+        key="radio_category_selection"
+    )
+    # تحديث الفهرس المحدد
+    st.session_state.selected_cat_index = cat_labels.index(selected_category_label)
+
+selected_category_key = categories[selected_category_label]
+
+# 6. دوال جلب خلاصة الأخبار واستخراج الصور HD
 def fetch_feed_data(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -136,7 +188,6 @@ def fetch_feed_data(url):
         pass
     return feedparser.parse(url)
 
-# 6. دالة استخراج وتجهيز الصورة بدقة HD
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_hd_og_image(article_url):
     try:
@@ -194,7 +245,6 @@ def display_hd_image(img_url):
     except Exception:
         pass
 
-# دالة الترجمة الذكية الكاش
 @st.cache_data(ttl=86400, show_spinner=False)
 def translate_text(text, target_lang):
     if not text or not text.strip():
@@ -206,7 +256,6 @@ def translate_text(text, target_lang):
     except Exception:
         return text
 
-# دالة الترقيم المبسطة
 def render_clean_pagination(total_pages, key_prefix):
     col_prev, col_info, col_next = st.columns([1, 1, 1])
     
@@ -223,56 +272,22 @@ def render_clean_pagination(total_pages, key_prefix):
             st.session_state.current_page += 1
             st.rerun()
 
-# 7. بناء الواجهة الرئيسية
+# 7. بناء الجزء الرئيسي للموقع
 st.title(ui_title)
 st.write(ui_desc)
-
-# تهيئة Session State للمرة الأولى
-tab_names = list(categories.keys())
-if 'selected_category_tab' not in st.session_state or st.session_state.selected_category_tab not in tab_names:
-    st.session_state.selected_category_tab = tab_names[0]
-
-if 'current_page' not in st.session_state:
-    st.session_state.current_page = 1
-
-# عند الضغط على زر التحديث: يعود تلقائياً لأول قسم ولأول خبر
-if st.button(ui_btn_refresh):
-    st.session_state.current_page = 1
-    st.session_state.selected_category_tab = tab_names[0]
-    if 'selected_source_index' in st.session_state:
-        st.session_state.selected_source_index = 0
-    st.rerun()
-
 st.divider()
 
-# عرض القائمة بشكل أفقي (Horizontal segmented control)
-selected_tab = st.segmented_control(
-    "",
-    tab_names,
-    default=st.session_state.selected_category_tab
-)
-
-if not selected_tab:
-    selected_tab = tab_names[0]
-
-st.session_state.selected_category_tab = selected_tab
-selected_category_key = categories[selected_tab]
-
-st.divider()
-
-# جلب قائمة المصادر بناءً على القسم المحدد
+# اختيار المصادر الإخبارية داخل القسم المختار
 sources = NEWS_FEEDS[selected_category_key]
 source_names = list(sources.keys())
 
-# عند ضبط التحديث يتم التمرير على أول مصدر تلقائياً
-if 'selected_source_index' not in st.session_state or st.session_state.selected_source_index >= len(source_names):
+if st.session_state.selected_source_index >= len(source_names):
     st.session_state.selected_source_index = 0
 
 selected_source_name = st.selectbox(ui_select_source, source_names, index=st.session_state.selected_source_index)
 feed_url = sources[selected_source_name]
 
 st.divider()
-
 st.subheader(f"📌 {selected_source_name}")
 
 feed = fetch_feed_data(feed_url)
@@ -283,7 +298,6 @@ if feed and feed.entries:
     total_entries = len(entries)
     total_pages = max(1, (total_entries + items_per_page - 1) // items_per_page)
     
-    # إعادة التصفير عند تغيير المصدر
     if 'last_source' not in st.session_state or st.session_state.last_source != selected_source_name:
         st.session_state.current_page = 1
         st.session_state.last_source = selected_source_name
@@ -299,7 +313,6 @@ if feed and feed.entries:
     current_page_entries = entries[start_idx:end_idx]
 
     for entry in current_page_entries:
-        # ترجمة العنوان والمضمون لضمان المطابقة الكاملة
         translated_title = translate_text(entry.title, lang_option)
         
         st.markdown("<div class='news-card'>", unsafe_allow_html=True)
