@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. تصميم وتنسيق عصري مع تخصيص المؤشر الأحمر للقائمة الرأسية (CSS Customization)
+# 2. تصميم وتنسيق عصري مع تخصيص اللون الأحمر للـ Radio
 st.markdown("""
 <style>
     /* خلفية الصفحة وتحسين الخطوط */
@@ -36,7 +36,7 @@ st.markdown("""
         box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     }
     
-    /* جعل زر القراءة متناسق */
+    /* تنسيق زر القراءة */
     .stLinkButton>a {
         border-radius: 8px !important;
         font-weight: 600 !important;
@@ -45,26 +45,20 @@ st.markdown("""
         border: none !important;
     }
 
-    /* تخصيص المؤشر الأحمر للقوائم الرأسية في القائمة الجانبية Sidebar */
-    div[data-testid="stSidebar"] div[role="radiogroup"] > label[data-checked="true"] {
-        background-color: #ffebee !important;
-        border-right: 4px solid #d32f2f !important;
-        border-left: 4px solid #d32f2f !important;
-        border-radius: 8px;
-        color: #d32f2f !important;
-        font-weight: bold;
+    /* تغيير لون زر الـ Radio المحدد إلى الأحمر */
+    div[data-testid="stSidebar"] div[role="radiogroup"] label[data-checked="true"] div[aria-checked="true"] {
+        background-color: #ff4b4b !important;
+        border-color: #ff4b4b !important;
     }
     
-    div[data-testid="stSidebar"] div[role="radiogroup"] > label {
-        padding: 8px 12px;
-        margin-bottom: 4px;
-        border-radius: 8px;
-        transition: all 0.2s ease;
+    div[data-testid="stSidebar"] div[role="radiogroup"] label[data-checked="true"] span {
+        color: #ff4b4b !important;
+        font-weight: bold !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. موحد مصادر الأخبار لضمان تماثل محتوى الألوان والأخبار عند تغيير اللغة
+# 3. موحد مصادر الأخبار لضمان تماثل المحتوى عند تغيير اللغة
 NEWS_FEEDS = {
     "Sports": {
         "بي بي سي سبورت (BBC Sport)": "http://feeds.bbci.co.uk/sport/football/rss.xml",
@@ -93,7 +87,7 @@ NEWS_FEEDS = {
     }
 }
 
-# 4. إدارة القائمة الجانبية ولغة الواجهة
+# 4. إعداد القائمة الجانبية واللغة
 with st.sidebar:
     st.markdown("### ⚙️ إعدادات / Settings")
     lang_option = st.selectbox(
@@ -139,11 +133,11 @@ else:
         "🎨 Arts": "Arts"
     }
 
-# 5. تهيئة الـ Session State وإدارة الرجوع لأول خيار تلقائياً
 cat_labels = list(categories.keys())
 
-if 'selected_cat_index' not in st.session_state:
-    st.session_state.selected_cat_index = 0
+# تهيئة الـ State بالقيم الافتراضية
+if "radio_category_selection" not in st.session_state or st.session_state["radio_category_selection"] not in cat_labels:
+    st.session_state["radio_category_selection"] = cat_labels[0]
 
 if 'current_page' not in st.session_state:
     st.session_state.current_page = 1
@@ -151,29 +145,28 @@ if 'current_page' not in st.session_state:
 if 'selected_source_index' not in st.session_state:
     st.session_state.selected_source_index = 0
 
-# زر تحديث الأخبار إعادة التعيين لأول خيار بالكامل
+# زر تحديث الأخبار: يعيد المؤشر الأحمر تلقائياً لأول قسم
 with st.sidebar:
     if st.button(ui_btn_refresh, use_container_width=True):
-        st.session_state.selected_cat_index = 0
+        st.session_state["radio_category_selection"] = cat_labels[0] # إعادة المؤشر لـ الرياضة
         st.session_state.current_page = 1
         st.session_state.selected_source_index = 0
         st.rerun()
+
     st.divider()
 
-    # القوائم الرأسية الجانبية اختيار الأقسام
     st.markdown(f"#### {ui_select_category}")
+    
+    # قائمة الـ Radio الرأسية
     selected_category_label = st.radio(
         label="",
         options=cat_labels,
-        index=st.session_state.selected_cat_index,
         key="radio_category_selection"
     )
-    # تحديث الفهرس المحدد
-    st.session_state.selected_cat_index = cat_labels.index(selected_category_label)
 
 selected_category_key = categories[selected_category_label]
 
-# 6. دوال جلب خلاصة الأخبار واستخراج الصور HD
+# 5. دوال جلب خلاصة الأخبار واستخراج الصور HD
 def fetch_feed_data(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -272,12 +265,11 @@ def render_clean_pagination(total_pages, key_prefix):
             st.session_state.current_page += 1
             st.rerun()
 
-# 7. بناء الجزء الرئيسي للموقع
+# 6. عرض محتوى الأخبار الرئيسي
 st.title(ui_title)
 st.write(ui_desc)
 st.divider()
 
-# اختيار المصادر الإخبارية داخل القسم المختار
 sources = NEWS_FEEDS[selected_category_key]
 source_names = list(sources.keys())
 
