@@ -1,6 +1,7 @@
 import streamlit as st
 import feedparser
 import requests
+import time
 from bs4 import BeautifulSoup
 from deep_translator import GoogleTranslator
 from io import BytesIO
@@ -98,7 +99,7 @@ with st.sidebar:
 
 if lang_option == "العربية":
     ui_title = "🌍 المنصة الإخبارية الشاملة"
-    ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار."
+    ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار بأسلوب عصري ومترجم كلياً."
     ui_select_category = "📂 أقسام الأخبار الرئيسية:"
     ui_select_source = "🌐 اختر المصدر الإخباري:"
     ui_btn_refresh = "🔄 تحديث الأخبار"
@@ -145,10 +146,15 @@ if 'current_page' not in st.session_state:
 if 'selected_source_index' not in st.session_state:
     st.session_state.selected_source_index = 0
 
-# زر تحديث الأخبار: يعيد المؤشر الأحمر تلقائياً لأول قسم
+if 'force_refresh_time' not in st.session_state:
+    st.session_state.force_refresh_time = time.time()
+
+# زر تحديث الأخبار: مسح الكاش وتجديد البيانات والرجوع لأول خيار
 with st.sidebar:
     if st.button(ui_btn_refresh, use_container_width=True):
-        st.session_state["radio_category_selection"] = cat_labels[0] # إعادة المؤشر لـ الرياضة
+        st.cache_data.clear()  # تفريغ الكاش المخبأ لجلب أحدث الأخبار فوراً
+        st.session_state.force_refresh_time = time.time()  # تغيير العادم لمنع استرجاع الصفحات القديمة
+        st.session_state["radio_category_selection"] = cat_labels[0]  # إعادة المؤشر لـ الرياضة
         st.session_state.current_page = 1
         st.session_state.selected_source_index = 0
         st.rerun()
@@ -166,22 +172,28 @@ with st.sidebar:
 
 selected_category_key = categories[selected_category_label]
 
-# 5. دوال جلب خلاصة الأخبار واستخراج الصور HD
-def fetch_feed_data(url):
+# 5. دالة جلب خلاصة الأخبار المباشرة دون كاش دائم
+def fetch_feed_data(url, refresh_token):
+    # إضافة طابع زمني للرابط لضمان عدم تخزينه في الـ Cache المباشر للسيرفر
+    sep = "&" if "?" in url else "?"
+    fresh_url = f"{url}{sep}_nocache={refresh_token}"
+    
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
     }
     try:
-        response = requests.get(url, headers=headers, timeout=12)
+        response = requests.get(fresh_url, headers=headers, timeout=12)
         if response.status_code == 200:
             parsed = feedparser.parse(response.content)
             if parsed.entries:
                 return parsed
     except Exception:
         pass
-    return feedparser.parse(url)
+    return feedparser.parse(fresh_url)
 
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=1800, show_spinner=False)
 def fetch_hd_og_image(article_url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
@@ -282,7 +294,8 @@ feed_url = sources[selected_source_name]
 st.divider()
 st.subheader(f"📌 {selected_source_name}")
 
-feed = fetch_feed_data(feed_url)
+# جلب البيانات المباشرة مع إلغاء الكاش القديم
+feed = fetch_feed_data(feed_url, st.session_state.force_refresh_time)
 
 if feed and feed.entries:
     entries = feed.entries
