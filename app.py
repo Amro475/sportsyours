@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from deep_translator import GoogleTranslator
 from io import BytesIO
 
-# 1. إعدادات الصفحة والواجهة
+# 1. إعدادات الصفحة
 st.set_page_config(
     page_title="المنصة الإخبارية الشاملة",
     page_icon="🌍",
@@ -14,15 +14,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. تصميم وتنسيق عصري مع تخصيص اللون الأحمر للـ Radio
+# 2. التنسيق البرمجي (CSS) للمؤشر الأحمر والبطاقات
 st.markdown("""
 <style>
-    /* خلفية الصفحة وتحسين الخطوط */
     .main {
         background-color: #f8f9fa;
     }
-    
-    /* تصميم بطاقات الأخبار العصري */
     .news-card {
         background-color: #ffffff;
         padding: 24px;
@@ -30,14 +27,11 @@ st.markdown("""
         box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         border: 1px solid #eef2f6;
         margin-bottom: 25px;
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        transition: transform 0.25s ease;
     }
     .news-card:hover {
         transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     }
-    
-    /* تنسيق زر القراءة */
     .stLinkButton>a {
         border-radius: 8px !important;
         font-weight: 600 !important;
@@ -45,13 +39,11 @@ st.markdown("""
         color: white !important;
         border: none !important;
     }
-
-    /* تغيير لون زر الـ Radio المحدد إلى الأحمر */
+    /* المؤشر الأحمر للتحديد */
     div[data-testid="stSidebar"] div[role="radiogroup"] label[data-checked="true"] div[aria-checked="true"] {
         background-color: #ff4b4b !important;
         border-color: #ff4b4b !important;
     }
-    
     div[data-testid="stSidebar"] div[role="radiogroup"] label[data-checked="true"] span {
         color: #ff4b4b !important;
         font-weight: bold !important;
@@ -59,7 +51,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. موحد مصادر الأخبار لضمان تماثل المحتوى عند تغيير اللغة
+# 3. مصادر الأخبار
 NEWS_FEEDS = {
     "Sports": {
         "بي بي سي سبورت (BBC Sport)": "http://feeds.bbci.co.uk/sport/football/rss.xml",
@@ -88,13 +80,10 @@ NEWS_FEEDS = {
     }
 }
 
-# 4. إعداد القائمة الجانبية واللغة
+# 4. إعدادات اللغة والواجهة
 with st.sidebar:
     st.markdown("### ⚙️ إعدادات / Settings")
-    lang_option = st.selectbox(
-        "اختر اللغة / Language",
-        ["العربية", "English"]
-    )
+    lang_option = st.selectbox("اختر اللغة / Language", ["العربية", "English"])
     st.divider()
 
 if lang_option == "العربية":
@@ -136,52 +125,52 @@ else:
 
 cat_labels = list(categories.keys())
 
-# تهيئة الـ State بالقيم الافتراضية
-if "radio_category_selection" not in st.session_state or st.session_state["radio_category_selection"] not in cat_labels:
-    st.session_state["radio_category_selection"] = cat_labels[0]
+# 5. دالة الـ Callback لإجبار التحديث وإعادة المؤشر للأول
+def reset_to_first():
+    st.cache_data.clear() # تفريغ الكاش لجلب أخبار جديدة
+    st.session_state["category_radio_key"] = cat_labels[0] # إعادة المؤشر الأحمر لأول عنصر
+    st.session_state["source_select_key"] = list(NEWS_FEEDS[categories[cat_labels[0]]].keys())[0] # أول مصدر
+    st.session_state.current_page = 1 # أول صفحة
+    st.session_state.force_refresh_time = time.time()
+
+# تهيئة الـ Session State إذا لم تكن موجودة
+if "category_radio_key" not in st.session_state or st.session_state["category_radio_key"] not in cat_labels:
+    st.session_state["category_radio_key"] = cat_labels[0]
 
 if 'current_page' not in st.session_state:
     st.session_state.current_page = 1
 
-if 'selected_source_index' not in st.session_state:
-    st.session_state.selected_source_index = 0
-
 if 'force_refresh_time' not in st.session_state:
     st.session_state.force_refresh_time = time.time()
 
-# زر تحديث الأخبار: مسح الكاش وتجديد البيانات والرجوع لأول خيار
+# زر التحديث مربوط بالـ Callback
 with st.sidebar:
-    if st.button(ui_btn_refresh, use_container_width=True):
-        st.cache_data.clear()  # تفريغ الكاش المخبأ لجلب أحدث الأخبار فوراً
-        st.session_state.force_refresh_time = time.time()  # تغيير العادم لمنع استرجاع الصفحات القديمة
-        st.session_state["radio_category_selection"] = cat_labels[0]  # إعادة المؤشر لـ الرياضة
-        st.session_state.current_page = 1
-        st.session_state.selected_source_index = 0
-        st.rerun()
-
+    st.button(ui_btn_refresh, on_click=reset_to_first, use_container_width=True)
     st.divider()
 
     st.markdown(f"#### {ui_select_category}")
-    
-    # قائمة الـ Radio الرأسية
     selected_category_label = st.radio(
         label="",
         options=cat_labels,
-        key="radio_category_selection"
+        key="category_radio_key"
     )
 
 selected_category_key = categories[selected_category_label]
 
-# 5. دالة جلب خلاصة الأخبار المباشرة دون كاش دائم
+# 6. جلب المصادر الخاصة بالقسم المختار
+sources = NEWS_FEEDS[selected_category_key]
+source_names = list(sources.keys())
+
+if "source_select_key" not in st.session_state or st.session_state["source_select_key"] not in source_names:
+    st.session_state["source_select_key"] = source_names[0]
+
+# 7. دوال جلب الأخبار وترجمتها
 def fetch_feed_data(url, refresh_token):
-    # إضافة طابع زمني للرابط لضمان عدم تخزينه في الـ Cache المباشر للسيرفر
     sep = "&" if "?" in url else "?"
     fresh_url = f"{url}{sep}_nocache={refresh_token}"
-    
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
     }
     try:
         response = requests.get(fresh_url, headers=headers, timeout=12)
@@ -196,14 +185,13 @@ def fetch_feed_data(url, refresh_token):
 @st.cache_data(ttl=1800, show_spinner=False)
 def fetch_hd_og_image(article_url):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         resp = requests.get(article_url, headers=headers, timeout=4)
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.content, 'html.parser')
             og_tag = (soup.find('meta', property='og:image') or 
                       soup.find('meta', attrs={'name': 'og:image'}) or 
-                      soup.find('meta', property='twitter:image:src') or
-                      soup.find('meta', property='twitter:image'))
+                      soup.find('meta', property='twitter:image:src'))
             if og_tag and og_tag.get('content'):
                 return og_tag['content']
     except Exception:
@@ -215,23 +203,10 @@ def extract_best_hd_image(entry):
         hd_url = fetch_hd_og_image(entry.link)
         if hd_url:
             return hd_url
-
     if 'media_content' in entry and len(entry.media_content) > 0:
         for media in entry.media_content:
             if 'url' in media:
                 return media['url']
-
-    if 'enclosures' in entry:
-        for enc in entry.enclosures:
-            if enc.get('type', '').startswith('image/'):
-                return enc.get('href')
-
-    content_to_search = getattr(entry, 'summary', '') + getattr(entry, 'content', [{'value': ''}])[0]['value']
-    soup = BeautifulSoup(content_to_search, 'html.parser')
-    img_tag = soup.find('img')
-    if img_tag and img_tag.get('src'):
-        return img_tag['src']
-
     return None
 
 def display_hd_image(img_url):
@@ -244,7 +219,6 @@ def display_hd_image(img_url):
             return
     except Exception:
         pass
-    
     try:
         st.image(img_url, use_container_width=True)
     except Exception:
@@ -263,38 +237,32 @@ def translate_text(text, target_lang):
 
 def render_clean_pagination(total_pages, key_prefix):
     col_prev, col_info, col_next = st.columns([1, 1, 1])
-    
     with col_prev:
         if st.button(ui_prev_btn, key=f"{key_prefix}_prev", disabled=(st.session_state.current_page == 1), use_container_width=True):
             st.session_state.current_page -= 1
             st.rerun()
-            
     with col_info:
         st.markdown(f"<p style='text-align: center; margin-top: 8px; font-weight: bold; font-size: 1.1rem;'>{st.session_state.current_page} / {total_pages}</p>", unsafe_allow_html=True)
-            
     with col_next:
         if st.button(ui_next_btn, key=f"{key_prefix}_next", disabled=(st.session_state.current_page == total_pages), use_container_width=True):
             st.session_state.current_page += 1
             st.rerun()
 
-# 6. عرض محتوى الأخبار الرئيسي
+# 8. عرض الواجهة الرئيسية
 st.title(ui_title)
 st.write(ui_desc)
 st.divider()
 
-sources = NEWS_FEEDS[selected_category_key]
-source_names = list(sources.keys())
-
-if st.session_state.selected_source_index >= len(source_names):
-    st.session_state.selected_source_index = 0
-
-selected_source_name = st.selectbox(ui_select_source, source_names, index=st.session_state.selected_source_index)
+selected_source_name = st.selectbox(
+    ui_select_source, 
+    source_names, 
+    key="source_select_key"
+)
 feed_url = sources[selected_source_name]
 
 st.divider()
 st.subheader(f"📌 {selected_source_name}")
 
-# جلب البيانات المباشرة مع إلغاء الكاش القديم
 feed = fetch_feed_data(feed_url, st.session_state.force_refresh_time)
 
 if feed and feed.entries:
@@ -302,10 +270,6 @@ if feed and feed.entries:
     items_per_page = 5
     total_entries = len(entries)
     total_pages = max(1, (total_entries + items_per_page - 1) // items_per_page)
-    
-    if 'last_source' not in st.session_state or st.session_state.last_source != selected_source_name:
-        st.session_state.current_page = 1
-        st.session_state.last_source = selected_source_name
 
     if st.session_state.current_page > total_pages:
         st.session_state.current_page = 1
