@@ -9,10 +9,66 @@ from io import BytesIO
 st.set_page_config(
     page_title="المنصة الإخبارية الشاملة",
     page_icon="🌍",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# 2. القائمة الجانبية لإعدادات (اللغة)
+# 2. إضافة لمسات وتصميم عصري (Modern Theme Custom CSS)
+st.markdown("""
+<style>
+    /* خلفية الصفحة وتحسين الخطوط */
+    .main {
+        background-color: #f8f9fa;
+    }
+    
+    /* تنسيق العنوان الرئيسي */
+    .main-header {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-weight: 800;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 5px;
+    }
+    
+    /* تصميم بطاقات الأخبار العصري */
+    .news-card {
+        background-color: #ffffff;
+        padding: 24px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        border: 1px solid #eef2f6;
+        margin-bottom: 25px;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .news-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+    }
+    
+    /* تحسين شكل الأزرار */
+    .stButton>button {
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    
+    /* تخصيص زر القراءة من المصدر */
+    .stLinkButton>a {
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
+        color: white !important;
+        border: none !important;
+        box-shadow: 0 3px 10px rgba(13, 110, 253, 0.25);
+    }
+    .stLinkButton>a:hover {
+        box-shadow: 0 5px 15px rgba(13, 110, 253, 0.4);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# 3. القائمة الجانبية لإعدادات (اللغة)
 with st.sidebar:
     st.markdown("### ⚙️ إعدادات / Settings")
     lang_option = st.selectbox(
@@ -24,8 +80,8 @@ with st.sidebar:
 # ضبط المحتوى والمصادر بناءً على اختيار اللغة
 if lang_option == "العربية":
     ui_title = "🌍 المنصة الإخبارية العالمية"
-    ui_desc = "تغطية فورية لأحدث الأخبار من الصحف والمصادر العربية والعالمية."
-    ui_select_source = "🌐 اختر المصدر الأجنبي:"
+    ui_desc = "تغطية فورية ومباشرة لأحدث الأخبار العالمية والمحلية بأسلوب عصري."
+    ui_select_source = "🌐 اختر المصدر الإخباري:"
     ui_btn_refresh = "🔄 تحديث الأخبار"
     ui_read_more = "🔗 قراءة الخبر كاملاً من المصدر الأصلي"
     ui_error = "تعذر جلب البيانات من هذا المصدر حالياً، يرجى اختيار مصدر آخر."
@@ -132,7 +188,6 @@ def fetch_hd_og_image(article_url):
         resp = requests.get(article_url, headers=headers, timeout=4)
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.content, 'html.parser')
-            # البحث عن وسم og:image الخاص بروابط المعاينة عالية الدقة
             og_tag = (soup.find('meta', property='og:image') or 
                       soup.find('meta', attrs={'name': 'og:image'}) or 
                       soup.find('meta', property='twitter:image:src') or
@@ -144,13 +199,11 @@ def fetch_hd_og_image(article_url):
     return None
 
 def extract_best_hd_image(entry):
-    # أولاً: محاولة استخراج الصورة الأصلية من صفحة المقال لضمان الدقة العالية HD
     if hasattr(entry, 'link') and entry.link:
         hd_url = fetch_hd_og_image(entry.link)
         if hd_url:
             return hd_url
 
-    # ثانياً: البحث عن روابط الصور المرفقة داخل الـ RSS
     if 'media_content' in entry and len(entry.media_content) > 0:
         for media in entry.media_content:
             if 'url' in media:
@@ -161,7 +214,6 @@ def extract_best_hd_image(entry):
             if enc.get('type', '').startswith('image/'):
                 return enc.get('href')
 
-    # ثالثاً: البحث داخل ملخص الخبر HTML
     content_to_search = getattr(entry, 'summary', '') + getattr(entry, 'content', [{'value': ''}])[0]['value']
     soup = BeautifulSoup(content_to_search, 'html.parser')
     img_tag = soup.find('img')
@@ -177,13 +229,11 @@ def display_hd_image(img_url):
         response = requests.get(img_url, headers=headers, timeout=5)
         if response.status_code == 200:
             image_bytes = BytesIO(response.content)
-            # عرض الصورة بحجمها ومظهرها الطبيعي الواضح
             st.image(image_bytes, use_container_width=True)
             return
     except Exception:
         pass
     
-    # محاولة بديلة سريعة
     try:
         st.image(img_url, use_container_width=True)
     except Exception:
@@ -211,7 +261,7 @@ def render_clean_pagination(total_pages, key_prefix):
             st.rerun()
             
     with col_info:
-        st.markdown(f"<p style='text-align: center; margin-top: 8px; font-weight: bold;'>{st.session_state.current_page} / {total_pages}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align: center; margin-top: 8px; font-weight: bold; font-size: 1.1rem; color: #495057;'>{st.session_state.current_page} / {total_pages}</p>", unsafe_allow_html=True)
             
     with col_next:
         if st.button(ui_next_btn, key=f"{key_prefix}_next", disabled=(st.session_state.current_page == total_pages), use_container_width=True):
@@ -219,21 +269,31 @@ def render_clean_pagination(total_pages, key_prefix):
             st.rerun()
 
 # 6. واجهة العرض الرئيسية
-st.title(ui_title)
+st.markdown(f"<h1 class='main-header'>{ui_title}</h1>", unsafe_allow_html=True)
 st.write(ui_desc)
 
+# إعادة ضبط الصفحة والقسم الأول عند الضغط على زر التحديث
 if st.button(ui_btn_refresh):
+    st.session_state.current_page = 1
+    tab_names = list(categories.keys())
+    st.session_state.selected_category_tab = tab_names[0]
     st.rerun()
 
 st.divider()
 
-# اختيار نوع الخبر
+# إدارة تبويب الأقسام في الـ Session State
 tab_names = list(categories.keys())
-selected_tab = st.segmented_control("", tab_names, default=tab_names[0])
+
+if 'selected_category_tab' not in st.session_state:
+    st.session_state.selected_category_tab = tab_names[0]
+
+# اختيار نوع الخبر
+selected_tab = st.segmented_control("", tab_names, default=st.session_state.selected_category_tab)
 
 if not selected_tab:
     selected_tab = tab_names[0]
 
+st.session_state.selected_category_tab = selected_tab
 selected_category = categories[selected_tab]
 
 st.divider()
@@ -273,12 +333,15 @@ if feed and feed.entries:
 
     for entry in current_page_entries:
         translated_title = translate_text(entry.title, lang_option)
+        
+        # تغليف كل خبر في بطاقة عصرية جميلة
+        st.markdown("<div class='news-card'>", unsafe_allow_html=True)
+        
         st.markdown(f"### {translated_title}")
         
         if hasattr(entry, 'published') and entry.published:
             st.caption(f"🕒 {entry.published}")
         
-        # استخراج الصورة عالية الدقة وعرضها
         img_url = extract_best_hd_image(entry)
         if img_url:
             col_img, _ = st.columns([3, 1])
@@ -293,7 +356,8 @@ if feed and feed.entries:
             st.write(translated_summary)
             
         st.link_button(ui_read_more, entry.link)
-        st.divider()
+        
+        st.markdown("</div>", unsafe_allow_html=True)
         
     render_clean_pagination(total_pages, "bottom_p")
 else:
